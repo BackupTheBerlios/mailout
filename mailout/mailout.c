@@ -1,24 +1,8 @@
 /* mailout.c 01/Nov/2000 (c) Jeremy C. Reed */
 
-#include <stdio.h>
-#include <string.h>
-#include <sys/types.h>
-#include <sys/socket.h>
-#include <netinet/in.h>
-#include <netdb.h>
-#include <unistd.h>
-
-char * getmailserver (hname)
-  char *hname;
-{
-  char *ret = NULL;
-
-  ret = (char *)malloc(255);
-  sprintf(ret, "mail.postalzone.com");
-
-  return ret;
-
-}
+#include "includes.h"
+#include "config.h"
+#include "mailout.h"
 
 main(argc, argv)
   int argc;
@@ -29,30 +13,39 @@ main(argc, argv)
   char *hname;
 
   if (argc == 1) {
-    fprintf (stderr, "mailout: neither action flags nor mail addresses given\n");
+    fprintf (stderr, "mailout: neither action flags nor mail addresses given.\n");
     exit(1);
   }
 
-  while (*++argv) {
-printf ("here: %s\n", *argv);
-    if (!strcmp(*argv, "-f")) {
-      if (*++argv) {
-        printf ("from: %s\n", *argv);
-      }
-      else {
-        fprintf (stderr, "mailout: incomplete or unknown argument\n");
-        exit(1);
-      }
-      continue;
-    }
+  if (parse_arguments(argc, argv)) {
+    fprintf (stderr, "mailout: incomplete or unknown argument(s).\n");
+    exit(1);
   }
+
+  if (to == NULL) {
+    fprintf (stderr, "mailout: recipient names must be specified.\n");
+    exit(1);
+  }
+
+#ifdef DEBUG
+  printf ("mailing to: %s\n", to);
+#endif
+
+  if (read_and_save_message()) {
+    exit(1);
+  }
+
 
   hname = (char *)malloc(255);
   sprintf(hname, "iwbc.net");
 
   mailserver = getmailserver(hname);
 
+  free (hname);
+
   sock = makeconnection(mailserver);
+
+  free(mailserver); /* don't free until after logged and used */
 
   communicate(sock);
 
@@ -61,81 +54,42 @@ printf ("here: %s\n", *argv);
   return 0;
 }
 
-
-int makeconnection(hname)
-	char *hname;
+int parse_arguments(argc, argv)
+  int argc;
+  char *argv[];
 {
-  int s;
-  struct sockaddr_in server;
-  struct hostent *hent;
 
-  s = socket(AF_INET, SOCK_STREAM, IPPROTO_IP);
-  /* maybe should use PF_INET instead of AF_INET */
-  /* later allow AF_INET6 */
-  if (s < 0) {
-    perror ("mailout: socket"); /* later do better logging */
-    exit(1);
+  while (*++argv) {
+    if (!strcmp(*argv, "-f")) {
+      if (*++argv) {
+        from = (char *) malloc(strlen(*argv));
+        strncpy(from, *argv, strlen(*argv));
+#ifdef DEBUG
+        printf ("from: %s\n", from);
+#endif
+      }
+      else return(1);
+      continue;
+    }
+
+    to = (char *) malloc(strlen(*argv));
+    strncpy(to, *argv, strlen(*argv));
+
   }
 
-  hent = (struct hostent *)gethostbyname(hname);
-  if (hent == NULL)
-    server.sin_addr.s_addr = inet_addr(hname);
-  else 
-    memcpy(&server.sin_addr.s_addr, hent->h_addr, hent->h_length); 
-/* bcopy(hent->h_addr_list[0], &server.sin_addr, hent->h_length); */
-
-  server.sin_family = AF_INET;
-  server.sin_port = htons(25); /* later allow different port */
-
-  if (connect (s, (struct sockaddr *)&server, sizeof(server))) {
-    perror ("mailout: connect");
-    exit(1);
-  }
-
-  /*  (void) setsockopt(sock, SOL_IP, IP_TOS, (char *)&on, sizeof(on)); */
-
-  return s;
+  return(0);
 
 }
 
-int communicate (s)
-  int s;
+char * getmailserver (hname)
+  char *hname;
 {
-  char buf[1024];
-  int loop;
+  char *ret = NULL;
 
-  /* assume mail server will send banner message */
-  if (read(s, buf, 1024) < 1) {
-    perror ("mailout: read");
-    exit(1);
-  }
-  printf ("%s", buf);
+  ret = (char *)malloc(255);
+  sprintf(ret, "mail.postalzone.com");
 
-/* should be 220 */
-
-  write (s, "HELO test\r\n", 11);
-
-  memset(buf, '\0', 1024);
-
-/* should reply with 250 */
-  if (read(s, buf, 1024) < 1) {
-    perror ("mailout: read");
-    exit(1);
-  }
-  printf ("%s", buf);
-
-  memset(buf, '\0', 1024);
-
-  write (s, "quit\r\n", 6);
-
-/* should reply with 221 */
-  if (read(s, buf, 1024) < 1) {
-    perror ("mailout: read");
-    exit(1);
-  }
-  printf ("%s", buf);
-
-  return 0;
+  return ret;
 
 }
 

@@ -31,6 +31,7 @@ sendmail: option requires an argument -- f
 /usr/sbin/exim -f
 exim abandoned: unknown, malformed, or incomplete option -f
 
+  - use /etc/aliases for forwarding mail
   - can deliver locally
     - use outside delivery program
   - can send out over network
@@ -64,6 +65,35 @@ Do various checks.
   and then doesn't do anything.
 
 Don't assume remote SMTP server will behave.
+
+MESSAGE ID
+uniqueness of message id
+The sendmail message id includes the pid.
+
+from Philip Hazel on Exim list:
+ I guarantee it, provided that (a) you don't ever set the clock backwards
+ and (b) your operating system doesn't re-use a process ID within one
+ second. The uniqueness depends on a combination of time and receiving 
+ process id. Even if time goes backwards, or a process id is re-used 
+ within one second, you would still need an Exim receiving process to get
+ that same re-used id for there to be duplication.
+
+As far as I can tell, sendmail copies standard input to the queue "df"
+file before it even tries to make a smtp connection. This "df" file doesn't
+have headers though.
+
+If you abort/break with CTRL-C when entering data, sendmail doesn't cleanup,
+the queue files still exist. Also if it runs out of disk space, it
+doesn't clean up -- the queue files still exist.
+
+/usr/home/jcr/testspool: write failed, file system is full
+
+/usr/home/jcr/testspool: write failed, file system is full
+collect: Cannot write tfOAA16717
+
+/usr/home/jcr/testspool: write failed, file system is full
+putbody: write error: No space left on device
+
 
 -=-=-=
 

@@ -3,6 +3,7 @@
 #include <sys/types.h>
 #include <sys/socket.h>
 #include <netinet/in.h>
+#include <arpa/inet.h>
 #include <netdb.h>
 #include <sys/param.h>
 #include <fcntl.h>
@@ -137,6 +138,8 @@ int send_message (s)
   printf ("%s", tmpbuf);
 #endif
 
+/* need to check for 501 -- bad "rcpt to" */
+
   if (strncmp("250 ", tmpbuf, 4)) {
     perror ("mailout: remote smtp didn't like RCPT TO");
     return(1);  
@@ -161,9 +164,9 @@ int send_message (s)
     return(1);  
   }
 
-  fd = open(queue_file, O_RDONLY, 0);
+  fd = open(queue_message_filename, O_RDONLY, 0);
   if (fd < 0) {
-    warn("problem opening queue file %s", queue_file);
+    warn("problem opening queue file %s", queue_message_filename);
     return(1);
   }
 
@@ -190,7 +193,7 @@ fprintf(stderr, "line length: %d\n", rcount);
   }
 
   if (rcount < 0) {
-    warn("problem reading from queue file", queue_file);
+    warn("problem reading from queue message file %s", queue_message_filename);
     return_value = 1;
   }
 
@@ -203,7 +206,7 @@ fprintf(stderr, "line length: %d\n", rcount);
 
   if (close(fd)) {
     return_value = 1;
-    warn("problem with closing queue file %s", queue_file);
+    warn("problem with closing queue file %s", queue_message_filename);
     return (1);
   }
 

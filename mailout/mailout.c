@@ -16,7 +16,8 @@ main(argc, argv)
   char hostname[MAXHOSTNAMELEN + 1];
 
   if (argc == 1) {
-    fprintf (stderr, "mailout: neither action flags nor mail addresses given.\n");
+    fprintf (stderr,
+      "mailout: neither action flags nor mail addresses given.\n");
     exit(1);
   }
 
@@ -27,7 +28,7 @@ main(argc, argv)
 
   if (do_queue) exit(run_queue());
 
-  if (to == NULL) {
+  if (to == NULL && !header_recipients) {
     fprintf (stderr, "mailout: recipient names must be specified.\n");
     exit(1);
   }
@@ -49,6 +50,8 @@ main(argc, argv)
     from = getname();
   }
 
+  memset(hostname, '\0', MAXHOSTNAMELEN);
+
   if (strchr(from, '@') == 0) {
 
     temp_from = from;
@@ -67,14 +70,20 @@ main(argc, argv)
     }
   }
 
-  if (strchr(to, '@') == 0) {
+  if (!to) {
+    /* should never get here -- this is checked earlier */
+    fprintf (stderr,
+      "mailout: no recipient addresses found.\n");
+    exit(1);
+  }
 
+  if (strchr(to, '@') == 0) {
     temp_from = to;
 
     /* later if hostname doesn't work use a default */
 /*      if (gethostname(hostname, sizeof(hostname)) < 1) perror("gethostname");
 */                  
-      (void)gethostname(hostname, sizeof(hostname));
+      if (!hostname) (void)gethostname(hostname, sizeof(hostname));
   
     to = malloc(strlen(temp_from) + strlen(hostname) + 3); 
 /* be sure check all malloc's */
@@ -86,6 +95,7 @@ main(argc, argv)
     }               
   } 
 
+fprintf(stderr, "here 2\n");
 
   hname = (char *)malloc(255);
   sprintf(hname, "iwbc.net");
@@ -116,7 +126,11 @@ int parse_arguments(argc, argv)
   char *argv[];
 {
   int in_options = 1;
+
   from = NULL;
+  to = NULL;
+  header_recipients = 0;
+  do_queue = 0;
 
   while (*++argv) {
     if (in_options) {
@@ -133,6 +147,10 @@ int parse_arguments(argc, argv)
       }
       if (!strcmp(*argv, "-q")) {
         do_queue = 1;
+        continue;
+      }
+      if (!strcmp(*argv, "-t")) {
+        header_recipients = 1;
         continue;
       }
       if (!strcmp(*argv, "--")) {

@@ -8,9 +8,12 @@ char * to;
 char * from;
 
 char unique_id[MAXPATHLEN + 1];
-char queue_file[MAXPATHLEN + 1];
+char queue_message_filename[MAXPATHLEN + 1];
+char queue_data_filename[MAXPATHLEN + 1];
 
 char * getmailserver (char *hname);
-void make_queue_filename ();
+void make_queue_filenames ();
 
 int do_queue;
+int header_recipients;
+

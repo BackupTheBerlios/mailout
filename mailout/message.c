@@ -6,6 +6,7 @@
 #include <sys/param.h>
 /* #include <sys/syslimits.h> */
 #include <fcntl.h>
+#include <time.h>
 
 #include "includes.h"
 #include "config.h"
@@ -25,8 +26,6 @@ int read_and_save_message()
   /* need to make sure that a Message-Id header exists */
 
   /* need to make sure queue file doesn't already exist */
-
-  sprintf(queue_file, message_id);
 
   queue_fd =
     open(queue_file, O_WRONLY | O_TRUNC | O_CREAT | O_EXCL | O_EXLOCK, 0660);
@@ -90,7 +89,14 @@ int read_and_save_message()
 
 void make_queue_filename ()
 {
-  sprintf(message_id, "UNIQUE_ID");
+  pid_t unique_pid;
+  time_t unique_time;
+
+  unique_pid = getpid();
+
+  unique_time = time(NULL);
+
+  sprintf(unique_id, "%d-%d", unique_pid, unique_time);
 
 /*   I am not sure how sendmail or exim chooses filenames or
      message IDs. Here are some examples:
@@ -105,6 +111,6 @@ OAA26027
 
   /* need to make sure queue file doesn't already exist */
 
-  sprintf(queue_file, message_id);
+  sprintf(queue_file, "m%s", unique_id);
 
 }

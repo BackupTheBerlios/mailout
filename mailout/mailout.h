@@ -7,7 +7,7 @@ extern char * from;
 char * to;
 char * from;
 
-char message_id[MAXPATHLEN + 1];
+char unique_id[MAXPATHLEN + 1];
 char queue_file[MAXPATHLEN + 1];
 
 char * getmailserver (char *hname);

@@ -1,6 +1,21 @@
 mailout
 (c) Jeremy C. Reed
 
+use sm.c (raju) to benchmark
+
+***
+Philip Hazel:
+
+Exim works only with fully qualified RFC822 addresses, i.e. user@domain. 
+It does allow some incoming addresses not to have a domain, but it 
+always adds a domain as soon as it sees such addresses. The domain it 
+adds is set by qualify_recipient (which defaults to qualify_domain if 
+not explicitly set).
+
+There is no way round this. Internally, there is no provision for 
+handling local parts without a domain.
+***
+
 01/Nov/2000
 My plans and ideas:
 
@@ -32,6 +47,7 @@ sendmail: option requires an argument -- f
 exim abandoned: unknown, malformed, or incomplete option -f
 
   - use /etc/aliases for forwarding mail
+  - make sure it discards any root exec permissions
   - can deliver locally
     - use outside delivery program
   - can send out over network
@@ -82,6 +98,9 @@ As far as I can tell, sendmail copies standard input to the queue "df"
 file before it even tries to make a smtp connection. This "df" file doesn't
 have headers though.
 
+Exim logs if press CTRL-C:
+2000-11-09 10:34:03 SIGINT received while reading local message
+
 If you abort/break with CTRL-C when entering data, sendmail doesn't cleanup,
 the queue files still exist. Also if it runs out of disk space, it
 doesn't clean up -- the queue files still exist.
@@ -112,6 +131,12 @@ but no recipients in headers.
 
 But sendmail will use command-line usernames even with "-t" option if no
 recipients in headers.
+
+
+if header has space before colon, like
+Subject : test
+Exim and sendmail will turn into:
+Subject: test
 
 -=-=-=
 

@@ -1,5 +1,14 @@
 mailout Changes/History
 
+20030704	version became 0.17
+
+		Bug fix: flock for queued message was done on
+		wrong, uninitialized descriptor.
+
+		When reporting errors on how remote SMTP server
+		didn't respond with correct reply don't output
+		non-related error message string too.
+
 20030611	Bug fix: properly escape lines that start with
 		a period by inserting another dot (message.c).
 

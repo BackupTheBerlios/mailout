@@ -1,5 +1,42 @@
 grep -i todo *[ch]
 
+(15/Oct/2003)
+send-mail: mailout: remote smtp didn't like RCPT TO
+send-mail: mailout: remote smtp didn't like DATA command
+it shouldn't get to the DATA command if RCPT TO failed ...
+
+(15/Oct/2003)
+accept 251 for RCPT
+
+(22/Jul/2003)
+add config (run or build time) option to choose delivery agent
+/usr/src/libexec/mail.local/mail.local.c is BSD licensed :)
+
+(22/Jul/2003)
+maybe use http://premk.sourceforge.net/
+(autoconf alternative)
+
+(04/Jul/2003)
+the queue .d file has message-id without @host part
+but created message id in real email is correct with @host part
+
+(04/Jul/2003)
+echo 456
+made a queue file with:
+^M
+456^M
+(it shouldn't have made a first line? maybe that was the header delimeter
+so it is okay??)
+
+(04/Jul/2003)
+error messages should be logged too -- have some log level option
+
+(04/Jul/2003)
+real sendmail does:
+rainier:~$ echo 456 | /usr/libexec/sendmail/sendmail '"jeremy reed"@localhost'
+"jeremy reed"@localhost... User unknown
+/home/reed/dead.letter... Saved message in /home/reed/dead.letter
+
 (11/Jun/2003)
 improve logging -- it doesn't even log message for each recipient
   or maybe that doesn't matter?
@@ -18,7 +55,6 @@ gcc -g -O2 -Wall -pedantic -c message.c
 message.c: In function `read_and_save_message':
 message.c:281: warning: ISO C89 does not support the `%T' strftime format
 message.c:281: warning: ISO C89 does not support the `%z' strftime format
-message.c:21: warning: `queue_data_fd' might be used uninitialized in this function
 
 (06/Jun/2003)
 is it normal to use strncpy to set a string pointer to a CPP
@@ -30,6 +66,7 @@ look at http://www.stafford.uklinux.net/libesmtp/  but it is GPL'd
 
 (20/Mar/2003)
 Brackets are indeed required in the MAIL and RCPT commands,
+be sure to require them or use them
 
 (11/Mar/2003)
 test  -f ""  to specify the empty envelope sender
@@ -43,6 +80,8 @@ make sure queues are created O_CREAT+O_EXCL (look at mktemp)
 test or implement support for real email addresses like
 reed (Reminder Service)
 (where parenthesis is comment)
+(04/Jul/2003) or maybe this doesn't matter; it appears that
+this is now obsolete in RFC2822
 
 (05/Dec/2002)
  -bd should return error!
@@ -60,8 +99,6 @@ some mta's (like qmail) don't crop out BCC fields.
 make sure mail is not lost on kill, ctrl-c or whatever
 
 (22/Oct/2002)
-message.c:21: warning: `queue_data_fd' might be used uninitialized in this function
-
 start -devel, announce, and user (discussion) mailing lists
 
 (26/Aug/2002)
@@ -73,8 +110,8 @@ when sending to many recipients with one bad "kib2kibservices.net"
  and record the ones that don't for queue.
 
 (02/Aug/2002)
-also check syntax like "kib2kibservices.net"
-that is okay, so maybe add "@hostname" if needed
+when should a hostname be added to recipient username??
+so maybe add "@hostname" if needed
 
 (18/Jul/2002)
 if it can't send then reply a bounce message back
@@ -213,11 +250,6 @@ mailout: remote smtp didn't like DATA command: No message of desired type
 rainier:~$ sendmail -f `perl -e 'print "A"x1083'`
 mailout: remote smtp didn't like MAIL FROM: Undefined error: 0
 
-
-(19/Dec/2001)
-rcpt_to shouldn't use perror(3) because errno isn't even set.
-Also check for other problem perror(3) uses.
-mailout: remote smtp didn't like RCPT TO: Undefined error: 0
 
 One tab (like exim and sendmail) for each additional line for "Received:" (02/Oct/2001)
  - qmail uses two spaces instead

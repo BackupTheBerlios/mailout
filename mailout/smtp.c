@@ -72,7 +72,7 @@ int start_smtp (s)
 #endif
 
   if (strncmp("220 ", tmpbuf, 4)) {
-    perror ("mailout: not smtp");
+    warnx ("mailout: not smtp");
     return(1);
   }
 
@@ -107,7 +107,7 @@ int start_smtp (s)
 #endif
 
   if (strncmp("250 ", tmpbuf, 4)) {
-    perror ("mailout: remote smtp didn't like HELO");
+    warnx ("mailout: remote smtp didn't like HELO");
     return(1);
   }
 
@@ -143,7 +143,7 @@ int start_smtp (s)
 #endif
 
   if (strncmp("250 ", tmpbuf, 4)) {
-    perror ("mailout: remote smtp didn't like MAIL FROM");
+    warnx ("mailout: remote smtp didn't like MAIL FROM");
     return(1);  
   }
   return (0);
@@ -190,7 +190,7 @@ int rcpt_to (s, address)
 /* need to check for 501 -- bad "rcpt to" */
 
   if (strncmp("250 ", tmpbuf, 4)) {
-    perror ("mailout: remote smtp didn't like RCPT TO");
+    warnx ("mailout: remote smtp didn't like RCPT TO");
     return(1);  
   }
 
@@ -228,7 +228,7 @@ int send_message (s)
 #endif
 
   if (strncmp("354 ", tmpbuf, 4)) {
-    perror ("mailout: remote smtp didn't like DATA command");
+    warnx ("mailout: remote smtp didn't like DATA command");
     return(1);  
   }
 #ifdef DEBUG
@@ -353,7 +353,7 @@ fprintf(stderr, "line length: %d\n", rcount);
 #endif
   
   if (strncmp("250 ", tmpbuf, 4)) {
-    perror ("mailout: remote smtp didn't like actual DATA");
+    warnx ("mailout: remote smtp didn't like actual DATA");
     return(1);       
   } 
 
@@ -380,7 +380,7 @@ int end_smtp (s)
 #endif
 
   if (strncmp("221 ", buf, 4)) {
-    perror ("mailout: remote smtp didn't like QUIT");
+    warnx ("mailout: remote smtp didn't like QUIT");
 #ifdef DEBUG
     printf ("received: %s", buf);
 #endif

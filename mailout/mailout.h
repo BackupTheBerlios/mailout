@@ -1,6 +1,6 @@
 /* mailout.h 04/Nov/2000 (c) Jeremy C. Reed */
 
-#define VERSION "0.16"
+#define VERSION "0.17"
 
 #ifndef MAXBSIZE
 # define MAXBSIZE 65536

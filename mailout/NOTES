@@ -39,6 +39,7 @@ exim abandoned: unknown, malformed, or incomplete option -f
   - make sure it discards any root exec permissions
   - can deliver locally
     - use outside delivery program
+(note that /usr/src/libexec/mail.local/mail.local.c is BSD licensed :)
   - can send out over network
   - can relay all mail through smarthost or mailhub
   - look for dns MX record for host; if not found, use A record
@@ -153,3 +154,7 @@ Philip Hazel:
  There is no way round this. Internally, there is no provision for 
  handling local parts without a domain.
 
+-=-=-
+
+reference djb's SMTP manual
+http://cr.yp.to/smtp.html

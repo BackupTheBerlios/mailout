@@ -42,7 +42,7 @@ int read_and_save_message()
   queue_message_fd =
     open(queue_message_filename, O_WRONLY | O_TRUNC | O_CREAT | O_EXCL, 0660);
   /* O_EXLOCK is a BSDism, so use flock */
-  (void) flock(queue_data_fd, LOCK_EX); /* no check */
+  (void) flock(queue_message_fd, LOCK_EX); /* no check */
 
   if (queue_message_fd == -1) {
     warn("problem with creating new queue message file %s",

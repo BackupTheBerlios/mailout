@@ -21,16 +21,35 @@ char * getmailserver (hname)
 }
 
 main(argc, argv)
-	char *argv[];
+  int argc;
+  char *argv[];
 {
   int sock;
   char *mailserver;
   char *hname;
 
+  if (argc == 1) {
+    fprintf (stderr, "mailout: neither action flags nor mail addresses given\n");
+    exit(1);
+  }
+
+  while (*++argv) {
+printf ("here: %s\n", *argv);
+    if (!strcmp(*argv, "-f")) {
+      if (*++argv) {
+        printf ("from: %s\n", *argv);
+      }
+      else {
+        fprintf (stderr, "mailout: incomplete or unknown argument\n");
+        exit(1);
+      }
+      continue;
+    }
+  }
+
   hname = (char *)malloc(255);
   sprintf(hname, "iwbc.net");
 
-/*  mailserver = (char *)malloc(255); */
   mailserver = getmailserver(hname);
 
   sock = makeconnection(mailserver);

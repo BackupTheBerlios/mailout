@@ -1,0 +1,10 @@
+make clean
+cp config.h-real config.h
+make
+if [ $? -eq 0 ]; then
+  ls -l /usr/local/sbin/mailout
+  su root -c 'cp mailout /usr/local/sbin/mailout ;
+    chown mailout:mailout /usr/local/sbin/mailout ;
+    chmod 6755 /usr/local/sbin/mailout'
+  ls -l /usr/local/sbin/mailout
+fi

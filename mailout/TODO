@@ -1,0 +1,178 @@
+clean up message.c mess (10/Oct/2001)
+ for example, it has redundant routines
+
+two places that adds missing headers? (10/Oct/2001)
+ message.c and smtp.c?
+ use the one from the data file because it has the correct info
+ (just in case message is sent later because it was queued)
+
+figure out if should reject sending message or queue for later
+ depending on temp error 4xx vs. permanent 5xx (10/Oct/2001)
+
+maybe make sure long headers are wrapped with whitespace starting
+ new wrapped line(s) (10/Oct/2001)
+
+replace sprintf with snprintf or asprintf (10/Oct/2001)
+
+(03/Oct/2001)
+force set size limit for email addresses, etc.
+rainier:~$ sendmail `perl -e 'print "A"x1083'`
+mailout: remote smtp didn't like RCPT TO: Undefined error: 0
+mailout: remote smtp didn't like DATA command: No message of desired type
+rainier:~$ sendmail -f `perl -e 'print "A"x1083'`
+mailout: remote smtp didn't like MAIL FROM: Undefined error: 0
+
+One tab (like exim and sendmail) for each additional line for "Received:" (02/Oct/2001)
+ - qmail uses two spaces instead
+
+must use /etc/aliases or /etc/mail/aliases (20/Sep/2001)
+
+have "-v" option (20/Sep/2001)
+ rainier:~$ echo "test" | /usr/libexec/sendmail/sendmail -v reed
+ reed... auto-rebuilding alias database /etc/mail/aliases.db
+ /etc/mail/aliases: 28 aliases, longest 28 bytes, 373 bytes total
+ aliased to reed@reedmedia.net
+ reed@reedmedia.net... Connecting to mail.reedmedia.net. via esmtp...
+ 220 pilchuck.reedmedia.net ESMTP Exim 3.12 #1 Thu, 20 Sep 2001 09:59:51 -0700
+ >>> EHLO rainier.reedmedia.net
+ 250-pilchuck.reedmedia.net Hello rainier [192.168.0.2]
+ 250-SIZE
+ 250-PIPELINING
+ 250 HELP
+ >>> MAIL From:<reed@rainier.reedmedia.net> SIZE=5
+ 250 <reed@rainier.reedmedia.net> is syntactically correct
+ >>> RCPT To:<reed@reedmedia.net>
+ 250 <reed@reedmedia.net> verified
+ >>> DATA
+ 354 Enter message, ending with "." on a line by itself
+ >>> .
+ 250 OK id=15k7B1-0003cG-00
+ reed@reedmedia.net... Sent (OK id=15k7B1-0003cG-00)
+ Closing connection to mail.reedmedia.net.
+ >>> QUIT
+ 221 pilchuck.reedmedia.net closing connection
+
+
+make sure it does the right thing when mailhub gives error because
+ verify failed for SMTP recipient (18/Sep/2001)
+ I can test with email that doesn't have an A or MX record.
+ currently:
+echo "junk" | sendmail reed@somwhere.outsthere.reedmedia.net
+mailout: remote smtp didn't like RCPT TO: Undefined error: 0
+mailout: remote smtp didn't like DATA command: No message of desired type
+
+log message ID also (18/Sep/2001)
+
+log problems also (18/Sep/2001)
+
+If no "To:" header then add one using recipient from command line (18/Sep/2001)
+
+headers be like:
+
+Received: from reed by rainier with local (Exim 3.16 #1)
+        id 15jFDO-0004ry-00
+        for info@pugetsoundtechnology.com; Tue, 18 Sep 2001 00:22:42 -0700
+
+Or:
+Received: by rainier.reedmedia.net (8.11.3/8.11.0) id f92MMMQ28350
+        for reed@wcug.wwu.edu; Tue, 2 Oct 2001 15:22:22 -0700 (PDT)
+
+
+what caused /var/cron/m2696-973584000? (23/Jun/2001)
+
+fix so it works as mailq (14/Apr/2001)
+ mailout: neither action flags nor mail addresses given.
+
+mailout setgid mailout group (or user) so it can write to the queues
+ (18/Jun/2001)
+
+If disk is full: (13/Jun/2001)
+Mail not sent. Sending error: 451 qq write error or disk full (#4.3.0)]
+
+rfc2822: "do not accept messages containing more
+   than 1000 character including the CR and LF per line" 
+   "Lines of characters in the body MUST be limited to 998 characters,
+     and SHOULD be limited to 78 characters, excluding the CRLF."
+rfc2811: "The maximum total length of a text line including the <CRLF> is
+      1000 characters (not counting the leading dot duplicated for
+      transparency)."
+ (07/Jun/2001)
+
+test with smtpstone and postfix load tests (22/May/2001)
+
+make sure "mailq -v" is implemented (02/May/2001)
+
+what does (command-line) sendmail/exim do when you try to relay through
+someone that rejects you? Does it bounce? error right then? Will it
+queue and try later? (26/Apr/2001)
+
+(10/Aug/2001)
+my queue: when will I report back to the sender about problems?
+(exim sometimes waits 24 hours)
+ when will it give up? (how will the admin choose retry times?)
+ -- never runs as a daemon; so cron job must run queue.
+
+make sure it changes "From: reed" to
+ "From: Jeremy C. Reed <reed@rainier.reedmedia.net>"
+ (24/Apr/2001)
+
+each line sent so smtp must have CRLF
+ mailout doesn't work with qmail unless
+ sed -e 's/$/^M/'
+ http://pobox.com/~djb/docs/smtplf.html
+ (23/Apr/2001)
+
+data file has different size:
+-rw-r-----  1 mailout  mailout  20072 Apr 23 15:07 9592-988063646.m
+-rw-r--r--  1 reed  staff  20071 Apr 22 00:03 TODO
+ (23/Apr/2001)
+
+in getmailserver() in mailout.c need to check sizes first (23/Apr/2001)
+ it should still queue mail for trying later
+
+in smtp.c makeconnection() need to report if can't
+ resolve hname and then die (23/Apr/2001)
+ must still queue for later.
+
+$ sendmail -f reed@rainier.reedmedia.net -t < 20Apr2001 
+mailout: remote smtp didn't like RCPT TO: Undefined error: 0
+mailout: remote smtp didn't like DATA command: No message of desired type
+
+2001-04-20 14:36:09 refused relay (host) to <nlproductions@internet.com> from <reed@rainier.reedmedia.net> H=rainier.reedmedia.net (rainier) [63.145.197.254]
+2001-04-20 14:36:09 unexpected disconnection while reading SMTP command from rainier.reedmedia.net (rainier) [63.145.197.254]
+
+
+fix mailout so it properly sends headers (no blank
+ lines in between); for example from cron (29/Mar/2001)
+From: root (Cron Daemon)
+To: root
+Subject: Cron <root@rainier> /usr/pkg/bin/rsync -ave ssh --delete
+    pilchuck:/home/ /home/backups/pilchuck/home
+Message-Id: <E14iZL8-0001EJ-00@pilchuck.reedmedia.net>
+Date: Thu, 29 Mar 2001 02:07:38 -0800
+
+e/ /home/backups/pilchuck/home
+X-Cron-Env: <SHELL=/bin/sh>
+X-Cron-Env: <PATH=/bin:/sbin:/usr/bin:/usr/sbin>
+X-Cron-Env: <HOME=/var/log>
+X-Cron-Env: <LOGNAME=root>
+X-Cron-Env: <USER=root>
+
+
+fix so works with cron! (28/Mar/2001)
+ /usr/sbin/sendmail -FCronDaemon -odi -oem -oi -or0s -t
+
+Make sure it parses
+ -fname
+ -Fname
+(28/Mar/2001)
+
+add headers (Received:, etc...) (16/Feb/2001)
+
+logging should say each recipient? (16/Feb/2001)
+
+if receive CTRL-C (or other terminate), then properly close logging, data files,
+ etc (16/Feb/2001)
+
+set -i (or -oi) 
+if has single dot escape it? (16/Feb/2001)

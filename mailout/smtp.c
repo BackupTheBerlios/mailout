@@ -102,9 +102,9 @@ int send_message (s)
   
   memset(tmpbuf, '\0', 1024);
   
-  write (s, "MAIL FROM: ", 11);
-  write (s, from, sizeof(from));
-  write (s, "\n", 1);
+  write (s, "MAIL FROM: <", 12);
+  write (s, from, strlen(from));
+  write (s, ">\n", 2);
     
 /* should reply with 250 */
   if (read(s, tmpbuf, 1024) < 1) {
@@ -123,9 +123,9 @@ int send_message (s)
 
   memset(tmpbuf, '\0', 1024);
   
-  write (s, "RCPT TO: ", 8);
-  write (s, to, sizeof(to));
-  write (s, "\n", 1);
+  write (s, "RCPT TO: <", 10);
+  write (s, to, strlen(to));
+  write (s, ">\n", 2);
     
 /* should reply with 250 */
   if (read(s, tmpbuf, 1024) < 1) {

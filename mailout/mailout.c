@@ -3,7 +3,6 @@
 #include "includes.h"
 #include "config.h"
 #include "mailout.h"
-#include "getname.c"
 
 main(argc, argv)
   int argc;
@@ -14,7 +13,7 @@ main(argc, argv)
   char *hname;
   char *temp_hostname;
   char *temp_from;
-  char *hostname;
+  char hostname[MAXHOSTNAMELEN + 1];
 
   if (argc == 1) {
     fprintf (stderr, "mailout: neither action flags nor mail addresses given.\n");
@@ -25,6 +24,8 @@ main(argc, argv)
     fprintf (stderr, "mailout: incomplete or unknown argument(s).\n");
     exit(1);
   }
+
+  if (do_queue) exit(run_queue());
 
   if (to == NULL) {
     fprintf (stderr, "mailout: recipient names must be specified.\n");
@@ -45,29 +46,46 @@ main(argc, argv)
 */
 
   if (from == NULL) {
-    temp_from = getname();
+    from = getname();
+  }
 
-printf ("1.\n");
-    if (hostname = malloc(MAXHOSTNAMELEN)) {
-printf ("2.\n");
+  if (strchr(from, '@') == 0) {
+
+    temp_from = from;
+
     /* later if hostname doesn't work use a default */
-      if (gethostname(hostname, sizeof(hostname)) < 1) perror("gethostname");
-    }
-    else perror("malloc");
-printf ("3. %s\n", hostname);
+/*      if (gethostname(hostname, sizeof(hostname)) < 1) perror("gethostname"); */
+      (void)gethostname(hostname, sizeof(hostname));
 
     from = malloc(strlen(temp_from) + strlen(hostname) + 3);
-printf ("4.\n");
 /* be sure check all malloc's */
     if (from) {
-      from = sprintf("%s@%s", temp_from, hostname);
-printf ("5.\n");
+      if (sprintf(from, "%s@%s", temp_from, hostname) == 0) perror ("sprintf");
     }
     else {
-printf ("6.\n");
       perror("malloc");
     }
   }
+
+  if (strchr(to, '@') == 0) {
+
+    temp_from = to;
+
+    /* later if hostname doesn't work use a default */
+/*      if (gethostname(hostname, sizeof(hostname)) < 1) perror("gethostname");
+*/                  
+      (void)gethostname(hostname, sizeof(hostname));
+  
+    to = malloc(strlen(temp_from) + strlen(hostname) + 3); 
+/* be sure check all malloc's */
+    if (to) {     
+      if (sprintf(to, "%s@%s", temp_from, hostname) == 0) perror ("sprintf");
+    } 
+    else {
+      perror("malloc");
+    }               
+  } 
+
 
   hname = (char *)malloc(255);
   sprintf(hname, "iwbc.net");
@@ -97,21 +115,35 @@ int parse_arguments(argc, argv)
   int argc;
   char *argv[];
 {
+  int in_options = 1;
   from = NULL;
 
   while (*++argv) {
-    if (!strcmp(*argv, "-f")) {
-      if (*++argv) {
-        from = (char *) malloc(strlen(*argv));
-        strncpy(from, *argv, strlen(*argv));
+    if (in_options) {
+      if (!strcmp(*argv, "-f")) {
+        if (*++argv) {
+          from = (char *) malloc(strlen(*argv));
+          strncpy(from, *argv, strlen(*argv));
 #ifdef DEBUG
-        printf ("from: %s\n", from);
+          printf ("from: %s\n", from);
 #endif
+        }
+        else return(1);
+        continue;
       }
-      else return(1);
-      continue;
+      if (!strcmp(*argv, "-q")) {
+        do_queue = 1;
+        continue;
+      }
+      if (!strcmp(*argv, "--")) {
+        in_options = 0;
+        continue;
+      }
     }
 
+    in_options = 0;
+
+    /* need to allow multiple recipients */
     to = (char *) malloc(strlen(*argv));
     strncpy(to, *argv, strlen(*argv));
 

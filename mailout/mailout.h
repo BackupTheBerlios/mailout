@@ -12,3 +12,5 @@ char queue_file[MAXPATHLEN + 1];
 
 char * getmailserver (char *hname);
 void make_queue_filename ();
+
+int do_queue;

@@ -42,6 +42,8 @@ int read_and_save_message()
 
   /* save it as is -- handle headers later */
   while ((rcount = read(STDIN_FILENO, buf, MAXBSIZE)) > 0) {
+/* read doesn't work per \n-terminated line unless from console */
+/* need to replace with a new read_until_newline function */
 
     if (header) {
       if (memchr(buf, ':', rcount)) {
@@ -111,6 +113,6 @@ OAA26027
 
   /* need to make sure queue file doesn't already exist */
 
-  sprintf(queue_file, "m%s", unique_id);
+  sprintf(queue_file, "/home/reed/src/mailout/queue/%s.m", unique_id);
 
 }

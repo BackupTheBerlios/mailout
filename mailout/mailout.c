@@ -147,6 +147,7 @@ int parse_arguments(argc, argv)
 
   from = NULL;
   to = NULL;
+  allow_dot = 0;
   header_recipients = 0;
   do_queue = 0;
 
@@ -177,10 +178,10 @@ int parse_arguments(argc, argv)
           continue;
         }
         if ((!strcmp(*argv, "-i")) || (!strcmp(*argv, "-oi"))) {
-          /* need to do? or does it matter */
-          /* -i     Ignore  dots alone on lines */
           /* a dot on a line by itself should not
              terminate an incoming, non-SMTP message. */
+          /* -i     Ignore  dots alone on lines */
+          allow_dot = 1;
           continue;
         }
         if (!strcmp(*argv, "--")) {

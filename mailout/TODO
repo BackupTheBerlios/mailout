@@ -2,9 +2,29 @@ grep -i todo *[ch]
 
 start -devel, announce, and user (discussion) mailing lists
 
-queue files don't have recipients listed!
+(26/Aug/2002)
+after checking basic syntax, maybe fork and exit so it returns quick
 
-provide man page and good documentation (10/Jul/2002)
+(02/Aug/2002)
+when sending to many recipients with one bad "kib2kibservices.net"
+ then it doesn't mail to any. Try to mail to ones that work
+ and record the ones that don't for queue.
+
+(02/Aug/2002)
+also check syntax like "kib2kibservices.net"
+that is okay, so maybe add "@hostname" if needed
+
+(18/Jul/2002)
+if it can't send then reply a bounce message back
+$ echo "test" | sendmail bogus@reedmedia.net
+mailout: remote smtp didn't like RCPT TO: Undefined error: 0
+mailout: remote smtp didn't like DATA command: No message of desired type
+** This above was wrong -- it is just in queue
+$ echo "test" | /usr/libexec/sendmail/sendmail bogus@reedmedia.net
+$
+** this sent bounce and removed from queue
+
+queue files don't have recipients listed!
 
 have switch or compile option or config that allows setting hostname (10/Jul/2002)
 
@@ -97,21 +117,6 @@ if no headers and it adds headers, then must send newline (10/Oct/2001)
 - this read_and_save_message() is all out of order or done wrong
   it shouldn't print data until the it is ready,
   so a CRLF can be added or special headers added
-
-Following was sent to Batchelor@sloth.wcug.wwu.edu (05/Nov/2001)
- Date: Mon, 5 Nov 2001 10:02:46 -0800 (PST)
- From: "Jeremy C. Reed" <reed@wcug.wwu.edu>
- To: "Batchelor, Jonathan" <jbatchel@lehman.COM>
- cc: "'exim-users@exim.org'" <exim-users@exim.org>
- Subject: RE: [Exim] exim-newbie needs your advice
- In-Reply-To: <A64846E939E9D411BC9E0002A513AB8E05867099@exlon03.lehman.com>
- Message-ID: <Pine.BSO.4.21.0111051000480.16629-100000@sloth.wcug.wwu.edu>
- MIME-Version: 1.0
- Content-Type: TEXT/PLAIN; charset=US-ASCII
-I guess because comma in address...?
- error says:
-<Batchelor@sloth.wcug.wwu.edu>>:
-Sorry, I couldn't find any host named sloth.wcug.wwu.edu>. (#5.1.2)
 
 bounce (via Resent-To) does not work! (23/Oct/2001)
  it causes qmail to fail it because it is looping
@@ -212,6 +217,8 @@ what caused /var/cron/m2696-973584000? (23/Jun/2001)
 
 fix so it works as mailq (14/Apr/2001)
  mailout: neither action flags nor mail addresses given.
+$ /usr/libexec/sendmail/sendmail -bp
+/var/spool/mqueue is empty
 
 mailout setgid mailout group (or user) so it can write to the queues
  (18/Jun/2001)
@@ -304,5 +311,3 @@ logging should say each recipient? (16/Feb/2001)
 if receive CTRL-C (or other terminate), then properly close logging, data files,
  etc (16/Feb/2001)
 
-set -i (or -oi) 
-if has single dot escape it? (16/Feb/2001)

@@ -1,6 +1,6 @@
 /* mailout.h 04/Nov/2000 (c) Jeremy C. Reed */
 
-#define VERSION "0.14"
+#define VERSION "0.15"
 
 #ifndef MAXBSIZE
 # define MAXBSIZE 65536
@@ -20,6 +20,7 @@ char myhostname[MAXHOSTNAMELEN + 1];
 
 int do_queue;
 int header_recipients;
+int allow_dot; /* don't end message at a period on line by itself */
 
 char **recipients;
 int recipient_count;

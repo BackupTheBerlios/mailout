@@ -1,4 +1,4 @@
-.Dd July 10, 2002
+.Dd October 22, 2002
 .Dt MAILOUT 8
 .Os
 .Sh NAME
@@ -24,11 +24,13 @@ Set the address of the
 .Ar sender
 instead of the current user.
 .It Fl i
-Not implemented. Ignored.
-(A dot "\fB.\fR" character on line by itself should not terminate message.)
+A dot "\fB.\fR" character on line by itself will not terminate incoming,
+non-SMTP message.
+(Same as \fB-oi\fR switch.)
 .It Fl oi
-Not implemented. Ignored.
-(A dot "\fB.\fR" character on line by itself should not terminate message.)
+When reading from standard input, the message does not end when
+a dot "\fB.\fR" character is on a line by itself.
+(Same as \fB-i\fR option.)
 .It Fl q
 Not implemented. Ignored. (Show queue of mail to be sent.)
 .It Fl t

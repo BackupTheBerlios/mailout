@@ -86,8 +86,6 @@ int read_and_save_message()
 
     if (buf[0] == '\n' || char_count >= MAX_LINE_SIZE || rcount == 0) {
 
-      /* TODO: message can end with a dot on a line by itself */
-
 /* check for Header: pattern */
 /* headers can be extended on a second line if start with a white space */
       if (header) {
@@ -120,6 +118,15 @@ int read_and_save_message()
             if (in_to_cc_bcc) {
              
               while (line_buf[tmp_pos] == ' ') tmp_pos++; 
+
+              /* skip stuff in quotes, like could have a "lastname, first" */
+              /* in other words, don't let that comma mean anything! */
+              if (line_buf[tmp_pos] == '"') {
+                tmp_pos++;
+                while (line_buf[tmp_pos] != '"' && tmp_pos < char_count)
+                  tmp_pos++;
+                tmp_pos++; /* get rid of last quote even if is not quote */
+              }
 
               for ( ; tmp_pos < MAX_LINE_SIZE && line_buf[tmp_pos]; tmp_pos++) {
 
@@ -187,6 +194,25 @@ fprintf(stderr, "header not found!\n");
           line_buf[char_count - 1] = '\r';
           line_buf[char_count] = '\n';
           char_count++;
+        }
+
+        /* message can end with a dot on a line by itself */
+        if (line_buf[0] == '.' && line_buf[1] == '\r' && line_buf[2] == '\n') {
+#ifdef DEBUG
+          fprintf(stderr, "dot on line by itself\n");
+#endif
+          if (! allow_dot) {
+            /* dot means end of message -- the default */
+            break;
+          }
+          else {
+            /* this is done so when sending via SMTP DATA it doesn't end */
+            /* some mail clients do this for you */
+            line_buf[1] = '.'; /* escape dot so two dots in a row */
+            line_buf[2] = '\r';
+            line_buf[3] = '\n';
+            char_count++; /* or char_count = 4 */
+          }
         }
 
         wcount = write(queue_message_fd, line_buf, char_count);

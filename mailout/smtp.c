@@ -261,8 +261,8 @@ return '%+.2d%.2d' % (offs / -3600, abs(offs / 60) % 60)
 /* should this have "for" address ? */
 /* todo: should this check if address and others have values first? */
   memset(tmpbuf, '\0', 1024);
-  if (snprintf(tmpbuf, 1024, "Received: from %s by %s with local"
-               " (mailout " VERSION ")\r\n"
+  if (snprintf(tmpbuf, 1024, "Received: from %s\r\n"
+               "\tby %s with local (mailout " VERSION ")\r\n"
                "\tid %s; %s\r\n",
                from, myhostname, unique_id,datebuf) == 0)
     perror ("snprintf"); /* should this die? */
@@ -311,14 +311,6 @@ fprintf(stderr, "Just wrote message-Id\n");
 #ifdef DEBUG
 fprintf(stderr, "line length: %d\n", rcount);
 #endif
-/* need to fix */
-/* this is way wrong, because it isn't line by line */
-    if (memchr(buf, '.', 1)) {
-      write (s, ".", 1); /* should test success */
-#ifdef DEBUG
-      fprintf(stderr, "found dot in first character\n");
-#endif
-    }
     wcount = write(s, buf, rcount);
     if (wcount == -1 || wcount != rcount) {
 #ifdef DEBUG

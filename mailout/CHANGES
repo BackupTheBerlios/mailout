@@ -1,5 +1,25 @@
 mailout Changes/History
 
+20021022	Skip recipient info in quotes; bug fix: don't
+		assume names in quotes are email addresses when
+		separated with a comma (message.c).
+
+		Add newline in Received: header so it looks nicer
+		(smtp.c).
+
+		Updated man page for -oi and -i options (mailout.8).
+
+		If -oi or -i switch is used, then a single dot on
+		line is escaped by adding a second period -- so
+		it doesn't terminate the SMTP DATA message 
+		(message.c, smtp.c).
+
+		Added -i and -oi option functionality. So now
+		a dot on line by itself terminates incoming
+		standard input (mailout.c, message.c).
+
+		version became 0.15
+
 20020710	version became 0.14
 
 		Wrote manual page (mailout.8). Wrote README.

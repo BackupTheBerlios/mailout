@@ -1,5 +1,10 @@
 mailout Changes/History
 
+20030611	Bug fix: properly escape lines that start with
+		a period by inserting another dot (message.c).
+
+		version became 0.16
+
 20021022	Skip recipient info in quotes; bug fix: don't
 		assume names in quotes are email addresses when
 		separated with a comma (message.c).

@@ -1,5 +1,67 @@
 grep -i todo *[ch]
 
+(11/Jun/2003)
+improve logging -- it doesn't even log message for each recipient
+  or maybe that doesn't matter?
+
+(11/Jun/2003)
+maybe don't need dot_added in message.c??
+
+(11/Jun/2003)
+make sure CTRL-C during input causes it to cancel and clean up queue
+and maybe return an error return code?
+
+(10/Jun/2003)
+smtp.c:257: warning: ISO C89 does not support the `%T' strftime format
+smtp.c:257: warning: ISO C89 does not support the `%z' strftime format
+gcc -g -O2 -Wall -pedantic -c message.c
+message.c: In function `read_and_save_message':
+message.c:281: warning: ISO C89 does not support the `%T' strftime format
+message.c:281: warning: ISO C89 does not support the `%z' strftime format
+message.c:21: warning: `queue_data_fd' might be used uninitialized in this function
+
+(06/Jun/2003)
+is it normal to use strncpy to set a string pointer to a CPP
+macro? why not just define it withjout using strncpy?
+(this is for myhostname in mailout.c)
+
+(21/Mar/2003)
+look at http://www.stafford.uklinux.net/libesmtp/  but it is GPL'd
+
+(20/Mar/2003)
+Brackets are indeed required in the MAIL and RCPT commands,
+
+(11/Mar/2003)
+test  -f ""  to specify the empty envelope sender
+or
+-f <>
+
+(05/Feb/2003)
+make sure queues are created O_CREAT+O_EXCL (look at mktemp)
+
+(08/Jan/2003)
+test or implement support for real email addresses like
+reed (Reminder Service)
+(where parenthesis is comment)
+
+(05/Dec/2002)
+ -bd should return error!
+
+(25/Nov/2002)
+look at http://www.acme.com/software/mini_sendmail/
+
+(25/Nov/2002)
+fsync the files
+
+(12/Nov/2002)
+some mta's (like qmail) don't crop out BCC fields.
+
+(22/Oct/2002)
+make sure mail is not lost on kill, ctrl-c or whatever
+
+(22/Oct/2002)
+message.c:21: warning: `queue_data_fd' might be used uninitialized in this function
+
 start -devel, announce, and user (discussion) mailing lists
 
 (26/Aug/2002)

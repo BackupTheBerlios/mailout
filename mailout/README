@@ -34,6 +34,8 @@ To build and install:
 
   cp /usr/lib/sendmail /usr/lib/sendmail.save
   ln -s /usr/local/sbin/mailout /usr/lib/sendmail
+  cp /usr/sbin/sendmail /usr/sbin/sendmail.save
+  ln -s /usr/local/sbin/mailout /usr/sbin/sendmail
 
  (And maybe move other sendmail related symlinks and tools.
   And maybe create symlink for sendmail man page too.)

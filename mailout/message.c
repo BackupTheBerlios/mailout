@@ -19,7 +19,7 @@
 int read_and_save_message()
 {
   int queue_message_fd, queue_data_fd, rcount, wcount;
-  int return_value, char_count;
+  int return_value, char_count, dot_added;
   int in_to_cc_bcc = 0;
   int tmp_pos;
   int in_address = 0;
@@ -65,6 +65,7 @@ int read_and_save_message()
   header = 1; /* assume message starts with header */
   has_date = 0;
   char_count = 0;
+  dot_added = 0;
   memset(line_buf, '\0', MAX_LINE_SIZE);
   memset(current_address, '\0', 300);
 
@@ -84,7 +85,7 @@ int read_and_save_message()
       char_count++;
     }
 
-    if (buf[0] == '\n' || char_count >= MAX_LINE_SIZE || rcount == 0) {
+    if (buf[0] == '\n' || char_count >= (MAX_LINE_SIZE - 1) || rcount == 0) {
 
 /* check for Header: pattern */
 /* headers can be extended on a second line if start with a white space */
@@ -190,29 +191,35 @@ fprintf(stderr, "header not found!\n");
 
       if (char_count > 0) {
 
+        if (line_buf[0] == '.' && ! dot_added) {
+          int loop;
+#ifdef DEBUG
+          fprintf(stderr, "dot begins line -- inserted dot.\n");
+#endif
+          /* this is done so when sending via SMTP DATA it doesn't end */
+          /* some mail clients do this for you */
+          for (loop = char_count; loop >= 1; loop--)
+            line_buf[loop + 1] = line_buf[loop];
+          line_buf[1] = '.'; /* escape dot so two dots in a row */
+          dot_added = 1;
+          char_count++; /* or char_count = 2 */
+        }
+
         if (rcount != 0 && buf[0] == '\n') { /* convert newline to CRLF */
           line_buf[char_count - 1] = '\r';
           line_buf[char_count] = '\n';
           char_count++;
         }
 
-        /* message can end with a dot on a line by itself */
-        if (line_buf[0] == '.' && line_buf[1] == '\r' && line_buf[2] == '\n') {
+        /* Message can end with a dot on a line by itself. */
+        /* This checks for two dots, because already escaped above. */
+        if (line_buf[0] == '.' && line_buf[1] == '.' &&
+            line_buf[2] == '\r' && line_buf[3] == '\n') {
 #ifdef DEBUG
           fprintf(stderr, "dot on line by itself\n");
 #endif
-          if (! allow_dot) {
-            /* dot means end of message -- the default */
-            break;
-          }
-          else {
-            /* this is done so when sending via SMTP DATA it doesn't end */
-            /* some mail clients do this for you */
-            line_buf[1] = '.'; /* escape dot so two dots in a row */
-            line_buf[2] = '\r';
-            line_buf[3] = '\n';
-            char_count++; /* or char_count = 4 */
-          }
+          if (! allow_dot) /* dot means end of message -- the default */
+            break; /* doesn't read anymore and doesn't write this to queue. */
         }
 
         wcount = write(queue_message_fd, line_buf, char_count);
@@ -228,6 +235,7 @@ fprintf(stderr, "header not found!\n");
         fprintf(stderr, "%d:\"%s\"\n", char_count, line_buf);
 #endif
       char_count = 0;
+      dot_added = 0;
       memset(line_buf, '\0', MAX_LINE_SIZE);
     } /* is end-of-line or MAX_LINE_SIZE characters or EOF (so do last line) */
 

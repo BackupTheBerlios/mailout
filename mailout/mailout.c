@@ -3,6 +3,7 @@
 #include "includes.h"
 #include "config.h"
 #include "mailout.h"
+#include "getname.c"
 
 main(argc, argv)
   int argc;
@@ -11,6 +12,9 @@ main(argc, argv)
   int sock;
   char *mailserver;
   char *hname;
+  char *temp_hostname;
+  char *temp_from;
+  char *hostname;
 
   if (argc == 1) {
     fprintf (stderr, "mailout: neither action flags nor mail addresses given.\n");
@@ -35,6 +39,35 @@ main(argc, argv)
     exit(1);
   }
 
+/*  if (temp_hostname = strchr(to, '@')) {
+    temp_hostname++;
+  }
+*/
+
+  if (from == NULL) {
+    temp_from = getname();
+
+printf ("1.\n");
+    if (hostname = malloc(MAXHOSTNAMELEN)) {
+printf ("2.\n");
+    /* later if hostname doesn't work use a default */
+      if (gethostname(hostname, sizeof(hostname)) < 1) perror("gethostname");
+    }
+    else perror("malloc");
+printf ("3. %s\n", hostname);
+
+    from = malloc(strlen(temp_from) + strlen(hostname) + 3);
+printf ("4.\n");
+/* be sure check all malloc's */
+    if (from) {
+      from = sprintf("%s@%s", temp_from, hostname);
+printf ("5.\n");
+    }
+    else {
+printf ("6.\n");
+      perror("malloc");
+    }
+  }
 
   hname = (char *)malloc(255);
   sprintf(hname, "iwbc.net");
@@ -64,6 +97,7 @@ int parse_arguments(argc, argv)
   int argc;
   char *argv[];
 {
+  from = NULL;
 
   while (*++argv) {
     if (!strcmp(*argv, "-f")) {
@@ -93,7 +127,7 @@ char * getmailserver (hname)
   char *ret = NULL;
 
   ret = (char *)malloc(255);
-  sprintf(ret, "mail.postalzone.com");
+  sprintf(ret, "pilchuck.reedmedia.net");
 
   return ret;
 

@@ -15,7 +15,7 @@ int add_recipient (address)
 #endif
 
   if (NULL == (recipients =
-    realloc(recipients, sizeof(char *) * recipient_count))) {
+    realloc(recipients, (1 + recipient_count) * sizeof(char *)))) {
     warn("malloc");
     return(1);
   }
@@ -39,8 +39,9 @@ int add_recipient (address)
     return(1);
   }
 
-  strncpy(recipients[recipient_count], address,
-          strlen(address));
+/* todo: check return value or (void) */
+  strncpy(recipients[recipient_count], address, strlen(address));
+  recipients[recipient_count][strlen(address)] = '\0';
 
 #ifdef DEBUG
   fprintf(stderr, "recipient added (%d): \"%s\" (length: %d)\n",

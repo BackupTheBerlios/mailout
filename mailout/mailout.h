@@ -1,6 +1,10 @@
 /* mailout.h 04/Nov/2000 (c) Jeremy C. Reed */
 
-#define VERSION "0.13"
+#define VERSION "0.14"
+
+#ifndef MAXBSIZE
+# define MAXBSIZE 65536
+#endif
 
 extern char * to;
 extern char * from;
@@ -26,5 +30,13 @@ char * getmailserver (char *hname);
 void make_queue_filenames ();
 char * getname();
 
-int add_recipient();
+int add_recipient(char * address);
+int parse_arguments();
+int run_queue();
+int read_and_save_message();
+int makeconnection(char * hname);
+int start_smtp (int s);
+int rcpt_to (int s, char * address);
+int send_message (int s);
+int end_smtp (int s);
 

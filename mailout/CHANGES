@@ -1,4 +1,36 @@
-20011023	Added date for Date: header and for Received: header.
+mailout Changes/History
+
+20020710	version became 0.14
+
+		Wrote manual page (mailout.8). Wrote README.
+
+		Use flock with LOCK_EX instead of BSD's read(2)
+		O_EXLOCK. Added sys/file.h include to message.c.
+
+		Added time.h include to smtp.c.
+
+		Make sure MAXBSIZE is defined (mailout.h).
+
+		Added some function prototypes to mailout.h.
+
+		Make sure strncpy'd strings are NUL terminated
+		(mailout.c and recipient.c).
+
+		Get rid of tmp_recipient -- not needed (mailout.c).
+
+		Make sure realloc of recipients doesn't allocate
+		size of zero first time (recipient.c).
+
+20011219	Removed unnecessary memset in rcpt_to that blanked
+		out the tmp buffer (smtp.c).
+
+20011023	Set MAX_LINE_SIZE to 1000 and use it instead of lines of
+		length 79.
+
+		Ignore case when checking for headers; pine uses "cc:"
+		internally when sending via "sendmail -t".
+
+		Added date for Date: header and for Received: header.
 
 20011011	version became 0.13
 
@@ -12,6 +44,8 @@
 		(Noticed this bug when using qmail as hub, because it
 		assumed a non-header line was a header because of the
 		missing required blank line.)
+
+		Made a better Received header (but still in wrong function).
 
 20011010	Converted newlines to CRLF.
 

@@ -8,10 +8,13 @@
 #include <fcntl.h>
 #include <time.h>
 #include <err.h>
+#include <sys/file.h>
 
 #include "includes.h"
 #include "config.h"
 #include "mailout.h"
+
+#define MAX_LINE_SIZE 1000
 
 int read_and_save_message()
 {
@@ -24,7 +27,7 @@ int read_and_save_message()
   int current_address_len = 0;
   static char buf[MAXBSIZE];
   static char last_buf[MAXBSIZE];
-  char line_buf[80]; /* I assume no Header: definition name is long */
+  char line_buf[MAX_LINE_SIZE];
   int header_found, header;
   time_t timer;
 
@@ -37,7 +40,9 @@ int read_and_save_message()
   /* need to make sure queue file doesn't already exist */
 
   queue_message_fd =
-    open(queue_message_filename, O_WRONLY | O_TRUNC | O_CREAT | O_EXCL | O_EXLOCK, 0660);
+    open(queue_message_filename, O_WRONLY | O_TRUNC | O_CREAT | O_EXCL, 0660);
+  /* O_EXLOCK is a BSDism, so use flock */
+  (void) flock(queue_data_fd, LOCK_EX); /* no check */
 
   if (queue_message_fd == -1) {
     warn("problem with creating new queue message file %s",
@@ -46,7 +51,9 @@ int read_and_save_message()
   }
 
   queue_data_fd =
-    open(queue_data_filename, O_WRONLY | O_TRUNC | O_CREAT | O_EXCL | O_EXLOCK, 0660);
+    open(queue_data_filename, O_WRONLY | O_TRUNC | O_CREAT | O_EXCL, 0660);
+  /* O_EXLOCK is a BSDism, so use flock */
+  (void) flock(queue_data_fd, LOCK_EX); /* no check */
 
   if (queue_data_fd == -1) {
     warn("problem with creating new queue data file %s", queue_data_filename);
@@ -58,12 +65,12 @@ int read_and_save_message()
   header = 1; /* assume message starts with header */
   has_date = 0;
   char_count = 0;
-  memset(line_buf, '\0', 80);
+  memset(line_buf, '\0', MAX_LINE_SIZE);
   memset(current_address, '\0', 300);
 
 
 /* read one character at a time */
-/* keep appending character to a string (up to 80 characters)
+/* keep appending character to a string (up to MAX_LINE_SIZE characters)
    if this string doesn't have a Header: then its not a header
 */
 
@@ -77,7 +84,7 @@ int read_and_save_message()
       char_count++;
     }
 
-    if (buf[0] == '\n' || char_count >= 79 || rcount == 0) {
+    if (buf[0] == '\n' || char_count >= MAX_LINE_SIZE || rcount == 0) {
 
       /* TODO: message can end with a dot on a line by itself */
 
@@ -85,24 +92,24 @@ int read_and_save_message()
 /* headers can be extended on a second line if start with a white space */
       if (header) {
         if (line_buf[0] == '\t' || line_buf[0] == ' ' ||
-            memchr(line_buf, ':', 80)) {
+            memchr(line_buf, ':', MAX_LINE_SIZE)) {
 
           header_found = 1;
 
-          if (strncmp(line_buf, "Date: ", 6) == 0) has_date = 1;
-          else if (strncmp(line_buf, "Message-ID: ", 12) == 0)
+          if (strncasecmp(line_buf, "date: ", 6) == 0) has_date = 1;
+          else if (strncasecmp(line_buf, "message-id: ", 12) == 0)
             has_message_id = 1;
           else if (header_recipients) {
             tmp_pos = 0;
-            if (strncmp(line_buf, "To:", 3) == 0) {
+            if (strncasecmp(line_buf, "to:", 3) == 0) {
               in_to_cc_bcc = 1;
               tmp_pos = 3;
             }
-            else if (strncmp(line_buf, "Cc:", 3) == 0) {
+            else if (strncasecmp(line_buf, "cc:", 3) == 0) {
               in_to_cc_bcc = 1;
               tmp_pos = 3;
             }
-            else if (strncmp(line_buf, "Bcc:", 4) == 0) {
+            else if (strncasecmp(line_buf, "bcc:", 4) == 0) {
               in_to_cc_bcc = 1;
               tmp_pos = 4;
             }
@@ -114,7 +121,7 @@ int read_and_save_message()
              
               while (line_buf[tmp_pos] == ' ') tmp_pos++; 
 
-              for ( ; tmp_pos < 79 && line_buf[tmp_pos] ; tmp_pos++) {
+              for ( ; tmp_pos < MAX_LINE_SIZE && line_buf[tmp_pos]; tmp_pos++) {
 
                 if (line_buf[tmp_pos] == '\0' || line_buf[tmp_pos] == ',') {
                   if (in_address) {
@@ -153,6 +160,9 @@ int read_and_save_message()
         } /* looks like a header */
         else {
           header = 0;
+#ifdef DEBUG
+fprintf(stderr, "end of possible headers \"%c\"\n", line_buf[0]);
+#endif
         }
       } /* header */ 
 
@@ -192,8 +202,8 @@ fprintf(stderr, "header not found!\n");
         fprintf(stderr, "%d:\"%s\"\n", char_count, line_buf);
 #endif
       char_count = 0;
-      memset(line_buf, '\0', 80);
-    } /* is end-of-line or is 79 characters or is EOF (so do last line) */
+      memset(line_buf, '\0', MAX_LINE_SIZE);
+    } /* is end-of-line or MAX_LINE_SIZE characters or EOF (so do last line) */
 
     /* do ... while reading standard input */
   } while (return_value == 0 && rcount > 0);
@@ -234,7 +244,7 @@ Received: (from reed@localhost)
 */
 
   if (!has_date) {
-    memset(line_buf, '\0', 80);
+    memset(line_buf, '\0', MAX_LINE_SIZE);
     timer = time(NULL);
 /* rfc timezone:
 note below %z may not work with some systems

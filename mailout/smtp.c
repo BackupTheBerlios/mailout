@@ -8,6 +8,7 @@
 #include <sys/param.h>
 #include <fcntl.h>
 #include <errno.h>
+#include <time.h>
 
 #include "mailout.h"
 #include "includes.h"
@@ -193,8 +194,6 @@ int rcpt_to (s, address)
     return(1);  
   }
 
-  memset(tmpbuf, '\0', 1024);
-
   return(0);
 
 }
@@ -320,7 +319,7 @@ fprintf(stderr, "line length: %d\n", rcount);
       fprintf(stderr, "found dot in first character\n");
 #endif
     }
-    wcount = write(s, buf, rcount); /* todo: check success here */
+    wcount = write(s, buf, rcount);
     if (wcount == -1 || wcount != rcount) {
 #ifdef DEBUG
       warn("problem with mailing message");

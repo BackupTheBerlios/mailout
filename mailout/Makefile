@@ -8,6 +8,9 @@ main : $(OBJECTS)
 %.o : %.c
 	$(CC) $(CFLAGS) -c $<
 
+efence : $(OBJECTS)
+	$(CC) $(CFLAGS) $(OBJECTS) /usr/pkg/lib/libefence.a -o mailout
+
 clean:
 	/bin/rm -f *.o mailout *.core
 

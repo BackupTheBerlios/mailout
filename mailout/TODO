@@ -1,3 +1,76 @@
+grep -i todo *[ch]
+
+start -devel, announce, and user (discussion) mailing lists
+
+queue files don't have recipients listed!
+
+provide man page and good documentation (10/Jul/2002)
+
+have switch or compile option or config that allows setting hostname (10/Jul/2002)
+
+make sure I properly handle smtp return codes: (12/Apr/2002)
+if rcpt_to fails then report in queue data file
+rainier:~$ awk -F: '{if ($3 > 100) print $1 }' < /etc/passwd | while read user ; do mail -s "test subject" $user < message ; done
+rainier:~$ mailout: remote smtp didn't like RCPT TO: Undefined error: 0
+mailout: remote smtp didn't like DATA command: No message of desired type
+mailout: remote smtp didn't like RCPT TO: Undefined error: 0
+mailout: remote smtp didn't like RCPT TO: Undefined error: 0
+mailout: remote smtp didn't like RCPT TO: Undefined error: 0
+mailout: remote smtp didn't like DATA command: No message of desired type
+mailout: remote smtp didn't like DATA command: No message of desired type
+mailout: remote smtp didn't like DATA command: No message of desired type
+mailout: remote smtp didn't like RCPT TO: Undefined error: 0
+mailout: remote smtp didn't like DATA command: No message of desired type
+ exim did:
+2002-04-12 19:10:46 verify failed for SMTP recipient ingres@rainier.reedmedia.ne
+t from <reed@rainier.reedmedia.net> H=rainier (rainier.reedmedia.net) [192.168.0
+.2]
+2002-04-12 19:10:47 unexpected disconnection while reading SMTP command from rai
+nier (rainier.reedmedia.net) [192.168.0.2]
+-rw-r-----  1 mailout  mailout    92 Apr 12 19:10 12017-1018663849.d
+-rw-r-----  1 mailout  mailout    45 Apr 12 19:10 12017-1018663849.m
+-rw-r-----  1 mailout  mailout    92 Apr 12 19:10 12019-1018663849.d
+-rw-r-----  1 mailout  mailout    44 Apr 12 19:10 12019-1018663849.m
+-rw-r-----  1 mailout  mailout    92 Apr 12 19:10 12021-1018663849.d
+-rw-r-----  1 mailout  mailout    44 Apr 12 19:10 12021-1018663849.m
+-rw-r-----  1 mailout  mailout    92 Apr 12 19:10 12023-1018663849.d
+-rw-r-----  1 mailout  mailout    45 Apr 12 19:10 12023-1018663849.m
+-rw-r-----  1 mailout  mailout    92 Apr 12 19:10 12029-1018663849.d
+-rw-r-----  1 mailout  mailout    44 Apr 12 19:10 12029-1018663849.m
+
+look at src/mail/smtpsend.c (29/Jan/2002)
+
+what is this last_buf junk?
+
+if multiple rcpt to:'s then check for okay and figure out what to do (26/mar/2002)
+
+work with:
+sendmail -oi -oem -bm -f <sender> <recipient> <recipient...>
+and pipe it the message on standard input.
+
+local deliveries should pipe to sendmail instead of using localhost:25,
+unless software is prepared to queue before it gets to local SMTP port.
+
+must work with:
+/usr/sbin/sendmail -bs -odb -oem
+ This is what pine uses by default (24/Jan/2002)
+
+webpage link to (29/Jan/2002)
+ http://www.stafford.uklinux.net/libesmtp/ (19/Feb/2002)
+ http://throwmail.sourceforge.net/ (19/Feb/2002)
+ http://www.michaelharo.com/projects/smtpsend/
+ http://www.toesinperil.com:8080/~me/smtppush/
+ http://larve.net/people/hugo/2001/02/ssmtp/
+ and others
+
+If From: header just has username (and no @host) then add it! (15/Nov/2001)
+ For example with Exim:
+From: reed
+Reply-To: reed
+ became
+From: "Jeremy C. Reed" <reed@pilchuck.reedmedia.net>
+Reply-To: reed@pilchuck.reedmedia.net
+
 it seems like mail of a big file is faster with mail (11/Oct/2001)
 dd if=/dev/zero of=/dev/stdout bs=1k count=2048 | tr '\0' 'A' | sendmail test@foo.bar
 
@@ -25,6 +98,29 @@ if no headers and it adds headers, then must send newline (10/Oct/2001)
   it shouldn't print data until the it is ready,
   so a CRLF can be added or special headers added
 
+Following was sent to Batchelor@sloth.wcug.wwu.edu (05/Nov/2001)
+ Date: Mon, 5 Nov 2001 10:02:46 -0800 (PST)
+ From: "Jeremy C. Reed" <reed@wcug.wwu.edu>
+ To: "Batchelor, Jonathan" <jbatchel@lehman.COM>
+ cc: "'exim-users@exim.org'" <exim-users@exim.org>
+ Subject: RE: [Exim] exim-newbie needs your advice
+ In-Reply-To: <A64846E939E9D411BC9E0002A513AB8E05867099@exlon03.lehman.com>
+ Message-ID: <Pine.BSO.4.21.0111051000480.16629-100000@sloth.wcug.wwu.edu>
+ MIME-Version: 1.0
+ Content-Type: TEXT/PLAIN; charset=US-ASCII
+I guess because comma in address...?
+ error says:
+<Batchelor@sloth.wcug.wwu.edu>>:
+Sorry, I couldn't find any host named sloth.wcug.wwu.edu>. (#5.1.2)
+
+bounce (via Resent-To) does not work! (23/Oct/2001)
+ it causes qmail to fail it because it is looping
+ I do not know expected behavior -- espcially when To: and Cc:
+ headers may exist.
+
+consider adding "-bs" option (23/Oct/2001)
+ see Exim manual page
+
 clean up message.c mess (10/Oct/2001)
  for example, it has redundant routines
  maybe have a "write" function that did the checks?
@@ -49,6 +145,12 @@ mailout: remote smtp didn't like RCPT TO: Undefined error: 0
 mailout: remote smtp didn't like DATA command: No message of desired type
 rainier:~$ sendmail -f `perl -e 'print "A"x1083'`
 mailout: remote smtp didn't like MAIL FROM: Undefined error: 0
+
+
+(19/Dec/2001)
+rcpt_to shouldn't use perror(3) because errno isn't even set.
+Also check for other problem perror(3) uses.
+mailout: remote smtp didn't like RCPT TO: Undefined error: 0
 
 One tab (like exim and sendmail) for each additional line for "Received:" (02/Oct/2001)
  - qmail uses two spaces instead
@@ -110,6 +212,9 @@ what caused /var/cron/m2696-973584000? (23/Jun/2001)
 
 fix so it works as mailq (14/Apr/2001)
  mailout: neither action flags nor mail addresses given.
+
+mailout setgid mailout group (or user) so it can write to the queues
+ (18/Jun/2001)
 
 If disk is full: (13/Jun/2001)
 Mail not sent. Sending error: 451 qq write error or disk full (#4.3.0)]

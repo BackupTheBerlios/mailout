@@ -2,8 +2,9 @@
 
 /* #define DEBUG */
 
-#define QUEUEDIRECTORY "/home/reed/mailout-queue"
+#define QUEUEDIRECTORY "/var/spool/mailout"
 
-#define MAILHUB "localhost"
+#define MAILHUB "your.smtp.mail.hub"
 
-#define HOSTNAME "sloth.wcug.wwu.edu"
+/* This is not required. It can use gethostname(3). */
+/* #define HOSTNAME "the.local.host.name" */

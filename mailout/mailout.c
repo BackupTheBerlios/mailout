@@ -48,13 +48,13 @@ int main(argc, argv)
 
 #ifdef HOSTNAME
 /* todo: check return value here */
-  strncpy(myhostname, HOSTNAME, strlen(HOSTNAME) + 1);
+  strncpy(myhostname, HOSTNAME, strlen(HOSTNAME));
+  myhostname[strlen(HOSTNAME)] = '\0';
 #else
-  if (gethostname(myhostname, sizeof(myhostname) - 1) < 0) {
+  if (gethostname(myhostname, sizeof(myhostname)) < 0) {
     perror("gethostname");
     return(1);
   }
-  myhostname[sizeof(myhostname) - 1] = '\0';
 #endif
 
   if (!from) {
@@ -69,6 +69,9 @@ int main(argc, argv)
 /* be sure check all malloc's */
     if (from) {
       if (sprintf(from, "%s@%s", temp_from, myhostname) == 0) perror ("sprintf");
+#ifdef DEBUG
+    printf ("from is %s\n", from);
+#endif
     }
     else {
       perror("malloc");
@@ -100,6 +103,12 @@ int main(argc, argv)
     if (rcpt_to(sock, recipients[loop])) {
 /* some problem? should I break? Should I continue? */      
 /* todo: if a problem, then note in queue data file */
+/* rcpt_to() should return values depending on what it did
+   for example, it shouldn't try to send message if email was rejected
+   (then it should keep a counter).
+   Or, it should send DATA if it has maximum recipients.
+ Or should this just do one RCPT TO per message and one DATA per recipient?
+*/
     }
 
     free(recipients[loop]);
@@ -135,7 +144,6 @@ int parse_arguments(argc, argv)
   char *argv[];
 {
   int in_options = 1;
-  char *tmp_recipient = NULL;
 
   from = NULL;
   to = NULL;
@@ -152,6 +160,7 @@ int parse_arguments(argc, argv)
           if (*++argv) {
             from = (char *) malloc(strlen(*argv));
             strncpy(from, *argv, strlen(*argv));
+            from[strlen(*argv)] = '\0';
 #ifdef DEBUG
             printf ("from: %s\n", from);
 #endif
@@ -186,14 +195,7 @@ int parse_arguments(argc, argv)
 
     if (header_recipients) break; /* don't use command-line recipients */
 
-    tmp_recipient = malloc(strlen(*argv) + 1);
-    if (tmp_recipient) {
-      strncpy(tmp_recipient, *argv, strlen(*argv));
-      if (add_recipient(tmp_recipient)) return(1);
-      memset(tmp_recipient, '\0', strlen(tmp_recipient));
-      free (tmp_recipient);
-    }
-    else perror("malloc");
+    if (add_recipient(*argv)) return(1);
 
     in_options = 0;
   }
@@ -209,12 +211,21 @@ char * getmailserver (hname)
 {
   char *ret;
 
-  if ((ret = malloc(255)) == NULL) {
+/* todo: should check??
+  if (strlen(MAILHUB) > MAXHOSTNAMELEN) {
+    printf (stderr,
+      "mailout: MAILHUB too long.\n");
+    exit(1);
+  }
+*/
+  if ((ret = malloc(MAXHOSTNAMELEN)) == NULL) {
     perror("getmailserver");
     exit(1);
   }
+
 /* todo: need to check sizes first */
-  strncpy(ret, MAILHUB, strlen(MAILHUB) + 1);
+  strncpy(ret, MAILHUB, strlen(MAILHUB));
+  ret[strlen(MAILHUB)] = '\0';
 
   return ret;
 

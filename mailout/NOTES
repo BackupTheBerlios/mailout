@@ -94,6 +94,24 @@ collect: Cannot write tfOAA16717
 /usr/home/jcr/testspool: write failed, file system is full
 putbody: write error: No space left on device
 
+*
+if "-t" and no usernames on command-line and none in headers
+  Exim: mails message to user:
+
+Subject: Mail failure - no recipient addresses
+
+A message that you sent contained no recipient addresses, and so no
+delivery could be attempted.
+
+------ This is a copy of your message, including all the headers. ------
+
+  sendmail: says "No recipient addresses found in header"
+ 
+Exim acts the same if using "-t" option and a username is on command-line
+but no recipients in headers.
+
+But sendmail will use command-line usernames even with "-t" option if no
+recipients in headers.
 
 -=-=-=
 

@@ -1,3 +1,72 @@
-20001107	Add queue option -- doesn't do anything though.
+20011023	Added date for Date: header and for Received: header.
+
+20011011	version became 0.13
+
+20011011	add_recipient() gets the address from a
+		To: name <address>.
+
+		Added HOSTNAME compile-time definition.
+
+		Reordered parts of read_and_save_message(), so
+		CRLF would be added in between if no headers.
+		(Noticed this bug when using qmail as hub, because it
+		assumed a non-header line was a header because of the
+		missing required blank line.)
+
+20011010	Converted newlines to CRLF.
+
+		Make sure CRLF is only added before last . if needed.
+		(This fixed bug where usually an extra newline was sent.)
+
+		Fixed problem where header was still set if not a header.
+		(Introduced recently; but not noticed in usage.)
+
+20011002	version became 0.12
+
+20011002	Fixed problem (29/Mar/2001) where some headers were
+		repeated. (message.c)
+
+20010905	Got rid of setting address to all nulls in
+		add_recipient, did this elsewhere.
+
+		Fixed problem where multiple recipients on command-line
+		didn't work; because argv pointer was being modified.
+
+		Fixed problem where if "-t" was used, it would still
+		add recipient from command-line.
+
+20010423	Fixed error message if problem with message DATA
+		(previously it said HELO).
+
+		Send a Message-Id header if needed.
+
+		Send a "Received:" header (this is not complete).
+
+		Removed queue message and queue data files after delivery.
+
+		Fixed getmailserver() so it would properly copy
+		MAILHUB; it wasn't copying last character "\0"
+		(mailout.c).
+
+20010328	Ignore unknown options (instead of using them as
+		addresses). This is a workaround fix so mailout
+		works with cron
+		(/usr/sbin/sendmail -FCronDaemon -odi -oem -oi -or0s -t).
+
+20010216	Write to datafile one line at a time (instead of
+		one character at a time).
+
+		Check for single dot on a line and stop reading input.
+
+		Moved add_recipient() out of mailout.c and created a
+		new recipient.c file.
+
+		Fixed realloc and malloc for add_recipient.
+
+		Add "-oi" option; it is the same as "-i" option. (But
+		this doesn't do anything yet.)
+
+20001107	Add queue option, but it doesn't do anything yet.
 
 		Add "--" option and now knows when in options or recipients.
+

@@ -23,8 +23,10 @@ int read_and_save_message()
   char current_address[300];
   int current_address_len = 0;
   static char buf[MAXBSIZE];
-  char header_buf[80]; /* I assume no Header: definition name is long */
-  int header, has_date, has_message_id;
+  static char last_buf[MAXBSIZE];
+  char line_buf[80]; /* I assume no Header: definition name is long */
+  int header_found, header;
+  time_t timer;
 
   /* need to get a unique identifier for filename and for message */
 
@@ -52,124 +54,165 @@ int read_and_save_message()
   }
 
   return_value = 0;
+  header_found = 0; /* if no header then body should start with blank line */
   header = 1; /* assume message starts with header */
   has_date = 0;
-  has_message_id = 0;
   char_count = 0;
-  memset(header_buf, '\0', 80);
+  memset(line_buf, '\0', 80);
   memset(current_address, '\0', 300);
+
 
 /* read one character at a time */
 /* keep appending character to a string (up to 80 characters)
    if this string doesn't have a Header: then its not a header
 */
 
-  while (return_value == 0 && (rcount = read(STDIN_FILENO, buf, 1)) > 0) {
+  do {
+    rcount = read(STDIN_FILENO, buf, 1);
+    if (rcount < 0) break;
 
-    if (header) {
-      if ('\n' != buf[0] && char_count < 79) {
-        header_buf[char_count] = buf[0];
-        char_count++;
-      }
-      else {
+    if (rcount != 0) { /* reached EOF */
+      last_buf[0] = buf[0];
+      line_buf[char_count] = buf[0];
+      char_count++;
+    }
+
+    if (buf[0] == '\n' || char_count >= 79 || rcount == 0) {
+
+      /* TODO: message can end with a dot on a line by itself */
+
 /* check for Header: pattern */
-
-#ifdef DEBUG
-        fprintf(stderr, "%d-%s-\n", char_count, header_buf);
-#endif
-
 /* headers can be extended on a second line if start with a white space */
-        if (header_buf[0] == '\t' || header_buf[0] == ' ' ||
-            memchr(header_buf, ':', 80)) {
-          if (strncmp(header_buf, "Date: ", 6) == 0) has_date = 1;
-          else if (strncmp(header_buf, "Message-ID: ", 12) == 0)
+      if (header) {
+        if (line_buf[0] == '\t' || line_buf[0] == ' ' ||
+            memchr(line_buf, ':', 80)) {
+
+          header_found = 1;
+
+          if (strncmp(line_buf, "Date: ", 6) == 0) has_date = 1;
+          else if (strncmp(line_buf, "Message-ID: ", 12) == 0)
             has_message_id = 1;
           else if (header_recipients) {
             tmp_pos = 0;
-            if (strncmp(header_buf, "To:", 3) == 0) {
+            if (strncmp(line_buf, "To:", 3) == 0) {
               in_to_cc_bcc = 1;
               tmp_pos = 3;
             }
-            else if (strncmp(header_buf, "Cc:", 3) == 0) {
+            else if (strncmp(line_buf, "Cc:", 3) == 0) {
               in_to_cc_bcc = 1;
               tmp_pos = 3;
             }
-            else if (strncmp(header_buf, "Bcc:", 4) == 0) {
+            else if (strncmp(line_buf, "Bcc:", 4) == 0) {
               in_to_cc_bcc = 1;
               tmp_pos = 4;
             }
-            else if (in_to_cc_bcc && (header_buf[0] == '\t' ||
-                                  header_buf[0] == ' ')) in_to_cc_bcc = 1;
+            else if (in_to_cc_bcc && (line_buf[0] == '\t' ||
+                     line_buf[0] == ' ')) in_to_cc_bcc = 1;
             else in_to_cc_bcc = 0;
 
             if (in_to_cc_bcc) {
              
-              while (header_buf[tmp_pos] == ' ') tmp_pos++; 
+              while (line_buf[tmp_pos] == ' ') tmp_pos++; 
 
-              for ( ; tmp_pos < 79 && header_buf[tmp_pos] ; tmp_pos++) {
-/*                if (header_buf[tmp_pos] == '<') {
-                  continue;
-                }
-*/
-                if (header_buf[tmp_pos] == '\0' ||
-/*                    header_buf[tmp_pos] == '\n' || */
-/*                    header_buf[tmp_pos] == ' ' || */
-/*                    header_buf[tmp_pos] == '>' || */
-                    header_buf[tmp_pos] == ',') {
+              for ( ; tmp_pos < 79 && line_buf[tmp_pos] ; tmp_pos++) {
+
+                if (line_buf[tmp_pos] == '\0' || line_buf[tmp_pos] == ',') {
                   if (in_address) {
-                    if (return_value = add_recipient(current_address)) break;
+                    if ((return_value = add_recipient(current_address))) break;
+                    memset(current_address, '\0', 300);
                     in_address = 0;
                     current_address_len = 0; 
                   }
-                  continue;
+                  continue; /* the for loop */
                 }
                 if (current_address_len > 300) {
-                  fprintf(stderr, "mailout: recipient address to long.\n");
+                  fprintf(stderr, "mailout: recipient address too long.\n");
                   return_value = 1;
                   break;
                 }
-                current_address[current_address_len] = header_buf[tmp_pos];
+                current_address[current_address_len] = line_buf[tmp_pos];
                 in_address = 1;
                 current_address_len++; 
 
+              } /* for */
 
-              }
+            } /* in_to_cc_bcc */
 
-            }
-            else in_to_cc_bcc = 0; 
+          } /* is a header recipient */
+          else {
+            in_to_cc_bcc = 0;
           }
-        char_count = 0;
-        memset(header_buf, '\0', 80);
-
-        }
+       
+          if (in_to_cc_bcc && in_address) {
+/* output recipient just in case */
+            if ((return_value = add_recipient(current_address))) break;
+            in_address = 0;
+            current_address_len = 0; 
+            memset(current_address, '\0', 300);
+          }
+        } /* looks like a header */
         else {
           header = 0;
-          in_to_cc_bcc = 0;
+        }
+      } /* header */ 
+
+      if (! header && ! header_found) {
+        /* a header was not found, so headers will be added later,
+           so this message must start with blank line to separate. */
+        wcount = write(queue_message_fd, "\r\n", 2);
+        if (wcount == -1 || wcount != 2) {
+           warn("problem with writing CRLF to %s", queue_message_filename);
+           return_value = 1;
+           break;
+         }
+#ifdef DEBUG
+fprintf(stderr, "header not found!\n");
+#endif
+         header_found = 1; /* because the blank line is the last header */
+       }
+
+      if (char_count > 0) {
+
+        if (rcount != 0 && buf[0] == '\n') { /* convert newline to CRLF */
+          line_buf[char_count - 1] = '\r';
+          line_buf[char_count] = '\n';
+          char_count++;
         }
 
-        if (in_to_cc_bcc && in_address) {
-/* output recipient just in case */
-          if (return_value = add_recipient(current_address)) break;
-          in_address = 0;
-          current_address_len = 0; 
+        wcount = write(queue_message_fd, line_buf, char_count);
+        if (wcount == -1 || wcount != char_count) {
+          warn("problem with writing to queue message file %s",
+                queue_message_filename);
+          return_value = 1;
+          break;
         }
-      }  
+      }
 
-    } 
+#ifdef DEBUG
+        fprintf(stderr, "%d:\"%s\"\n", char_count, line_buf);
+#endif
+      char_count = 0;
+      memset(line_buf, '\0', 80);
+    } /* is end-of-line or is 79 characters or is EOF (so do last line) */
 
-    wcount = write(queue_message_fd, buf, rcount);
-    if (wcount == -1 || wcount != rcount) {
-      warn("problem with writing to queue message file %s",
-           queue_message_filename);
-      return_value = 1;
-      break;
-    }
-
-  }
+    /* do ... while reading standard input */
+  } while (return_value == 0 && rcount > 0);
 
   if (rcount < 0) {
     warn("problem reading from standard input");
     return_value = 1;
+  }
+  else if (last_buf[0] != '\n') {  /* todo:  move this up above */
+    /* make sure ends with CRLF so . (dot) will be on line by itself */
+    wcount = write(queue_message_fd, "\r\n", 2);
+    if (wcount == -1 || wcount != 2) {
+      warn("problem with writing last CRLF to queue message file %s",
+            queue_message_filename);
+      return_value = 1;
+    }
+#ifdef DEBUG
+fprintf(stderr, "just wrote CRLF and last_buf was %c\n", last_buf[0]);
+#endif
   }
 
   if (close(queue_message_fd)) {
@@ -178,17 +221,38 @@ int read_and_save_message()
     return (1);
   }
 
-  if (!has_date) {
-    write (queue_data_fd, "Date: need to do\n", 17); 
-/*    timer = time(NULL);
-    tblock = localtime(&timer);
-    printf("%s", asctime(tblock));
+/* create headers */
+
+  /* add "Received:" header */
+  write (queue_data_fd, "Received: (mailout)\r\n", 21);
+ /* Received: from rainier (rainier.reedmedia.net) [192.168.0.2] 
+        by pilchuck.reedmedia.net with esmtp (Exim 3.12 #1 (Debian))
+        id 14TwcV-0003dA-00; Fri, 16 Feb 2001 17:57:07 -0800        
+Received: (from reed@localhost)
+        by rainier.reedmedia.net (8.11.0/8.11.0) id f1H1uwe13933;
+        Fri, 16 Feb 2001 17:56:58 -0800 (PST)
 */
+
+  if (!has_date) {
+    memset(line_buf, '\0', 80);
+    timer = time(NULL);
+/* rfc timezone:
+note below %z may not work with some systems
+dst = timetuple[8]
+offs = (time.timezone, time.timezone, time.altzone)[1 + dst]
+return '%+.2d%.2d' % (offs / -3600, abs(offs / 60) % 60) 
+*/
+    strftime(line_buf, 79, "Date: %a, %d %b %Y %T %z\r\n", localtime(&timer)); 
+    write (queue_data_fd, line_buf, strlen(line_buf)); 
+
+#ifdef DEBUG
+fprintf(stderr, "Adding Date: header %s\n", line_buf);
+#endif
   }
   if (!has_message_id) {
     write (queue_data_fd, "Message-ID: <", 13); 
     write (queue_data_fd, unique_id, strlen(unique_id));
-    write (queue_data_fd, ">\n", 2);
+    write (queue_data_fd, ">\r\n", 3);
   }
 
   if (close(queue_data_fd)) {

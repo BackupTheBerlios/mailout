@@ -7,6 +7,7 @@
 #include <netdb.h>
 #include <sys/param.h>
 #include <fcntl.h>
+#include <errno.h>
 
 #include "mailout.h"
 #include "includes.h"
@@ -28,9 +29,11 @@ int makeconnection(hname)
   }
 
   hent = (struct hostent *)gethostbyname(hname);
-  if (hent == NULL)
+  if (hent == NULL) { /* error */
     server.sin_addr.s_addr = inet_addr(hname);
-  else 
+/* todo: need to report if can't resolve hname and then die */
+
+  } else 
     memcpy(&server.sin_addr.s_addr, hent->h_addr, hent->h_length); 
 /* bcopy(hent->h_addr_list[0], &server.sin_addr, hent->h_length); */
 
@@ -171,7 +174,7 @@ int rcpt_to (s, address)
   
   write (s, "RCPT TO: <", 10);
   write (s, address, strlen(address));
-  write (s, ">\n", 2);
+  write (s, ">\r\n", 3);
     
 /* should reply with 250 */
   if (read(s, tmpbuf, 1024) < 1) {
@@ -201,9 +204,19 @@ int send_message (s)
 {
   int fd, rcount, wcount, return_value;
   char buf[MAXBSIZE];
+  char datebuf[80];
   char tmpbuf[1024];
+  time_t timer;
   
-  write (s, "DATA\n", 5);
+#ifdef DEBUG
+  fprintf (stderr, "start send_message()\n");
+#endif
+
+  write (s, "DATA\r\n", 6);
+
+#ifdef DEBUG
+  fprintf (stderr, "just wrote DATA\n");
+#endif
     
 /* should reply with 354 */
   if (read(s, tmpbuf, 1024) < 1) {
@@ -212,13 +225,16 @@ int send_message (s)
   } 
 
 #ifdef DEBUG
-  printf ("%s", tmpbuf);
+  fprintf (stderr, "%s", tmpbuf);
 #endif
 
   if (strncmp("354 ", tmpbuf, 4)) {
     perror ("mailout: remote smtp didn't like DATA command");
     return(1);  
   }
+#ifdef DEBUG
+  else fprintf (stderr, "remote smtp is waiting for data\n");
+#endif
 
   fd = open(queue_message_filename, O_RDONLY, 0);
   if (fd < 0) {
@@ -227,6 +243,70 @@ int send_message (s)
   }
 
   return_value = 0;
+
+ /* timedate for headers */
+/*todo: this should not be done here -- because date fro from should be done
+at initial queue time */
+  memset(datebuf, '\0', 80);
+  timer = time(NULL);        
+/* rfc timezone:
+note below %z may not work with some systems
+dst = timetuple[8]
+offs = (time.timezone, time.timezone, time.altzone)[1 + dst]
+return '%+.2d%.2d' % (offs / -3600, abs(offs / 60) % 60)
+*/
+  strftime(datebuf, 79, "%a, %d %b %Y %T %z", localtime(&timer));
+
+/* first send "Received: " header */
+
+/* should this have "for" address ? */
+/* todo: should this check if address and others have values first? */
+  memset(tmpbuf, '\0', 1024);
+  if (snprintf(tmpbuf, 1024, "Received: from %s by %s with local"
+               " (mailout " VERSION ")\r\n"
+               "\tid %s; %s\r\n",
+               from, myhostname, unique_id,datebuf) == 0)
+    perror ("snprintf"); /* should this die? */
+  else {
+    write (s, tmpbuf, strlen(tmpbuf));
+
+#ifdef DEBUG
+fprintf(stderr, "Just wrote Received: header\n");
+#endif
+  }
+
+/* todo: this should be done somewhere else -- because this info is wrong
+   if it is delivered later */
+
+  if (!has_date) {                                           
+    write (s, "Date: ", 6); 
+    write (s, datebuf, strlen(datebuf));
+    write (s, "\r\n", 2);
+
+#ifdef DEBUG
+fprintf(stderr, "just wrote Date: header %s\n", tmpbuf);
+#endif
+  }
+/* send Message-Id: header if needed */
+  if (!has_message_id) {
+    write (s, "Message-Id: <", 13); 
+    write (s, unique_id, strlen(unique_id));
+#ifdef DEBUG
+fprintf(stderr, "unique_id %s", unique_id);
+#endif
+    write (s, "@", 1);
+#ifdef DEBUG
+fprintf(stderr, " @myhostname %s\n", myhostname);
+#endif
+    write (s, myhostname, strlen(myhostname));
+    write (s, ">\r\n", 3);
+#ifdef DEBUG
+fprintf(stderr, "Just wrote message-Id\n");
+#endif
+  }
+#ifdef DEBUG
+  else fprintf(stderr, "Didn't create new Message-Id\n");
+#endif
 
   while ((rcount = read(fd, buf, MAXBSIZE)) > 0) {
 #ifdef DEBUG
@@ -240,7 +320,7 @@ fprintf(stderr, "line length: %d\n", rcount);
       fprintf(stderr, "found dot in first character\n");
 #endif
     }
-    wcount = write(s, buf, rcount);
+    wcount = write(s, buf, rcount); /* todo: check success here */
     if (wcount == -1 || wcount != rcount) {
 #ifdef DEBUG
       warn("problem with mailing message");
@@ -255,7 +335,8 @@ fprintf(stderr, "line length: %d\n", rcount);
     return_value = 1;
   }
 
-  if (write (s, "\r\n.\r\n", 5) != 5) {
+  /* message.c makes sure that queued message ends with CRLF */
+  if (write (s, ".\r\n", 3) != 3) {
 #ifdef DEBUG
     warn("problem with sending . terminator");
 #endif
@@ -277,11 +358,11 @@ fprintf(stderr, "line length: %d\n", rcount);
   }
   
 #ifdef DEBUG
-  printf ("%s", tmpbuf);
+  fprintf (stderr, "%s", tmpbuf);
 #endif
   
   if (strncmp("250 ", tmpbuf, 4)) {
-    perror ("mailout: remote smtp didn't like HELO");
+    perror ("mailout: remote smtp didn't like actual DATA");
     return(1);       
   } 
 
@@ -309,6 +390,9 @@ int end_smtp (s)
 
   if (strncmp("221 ", buf, 4)) {
     perror ("mailout: remote smtp didn't like QUIT");
+#ifdef DEBUG
+    printf ("received: %s", buf);
+#endif
     return(1);
   }
 

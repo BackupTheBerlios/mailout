@@ -1,21 +1,6 @@
 mailout
 (c) Jeremy C. Reed
 
-use sm.c (raju) to benchmark
-
-***
-Philip Hazel:
-
-Exim works only with fully qualified RFC822 addresses, i.e. user@domain. 
-It does allow some incoming addresses not to have a domain, but it 
-always adds a domain as soon as it sees such addresses. The domain it 
-adds is set by qualify_recipient (which defaults to qualify_domain if 
-not explicitly set).
-
-There is no way round this. Internally, there is no provision for 
-handling local parts without a domain.
-***
-
 01/Nov/2000
 My plans and ideas:
 
@@ -35,6 +20,10 @@ My plans and ideas:
 example:
 "sendmail", "-i", "-t", "-F",
                     "\"Reminder Service\"", "-f", "root", NULL);
+
+
+ -i, -oi: a  dot  on a line by itself should not
+              terminate an incoming, non-SMTP message.
 
 if option like "-f" is after a valid user name then Exim and Sendmail think
 it is also a username to send to.
@@ -63,6 +52,10 @@ More thoughts:
 - don't need setuid unless able to do local deliveries?
 
 Do various checks.
+use sm.c (raju) to benchmark
+
+***
+
 
  ./mailout `perl -e 'printf "A" x 9777'`
  Exim says and logs:
@@ -94,6 +87,8 @@ from Philip Hazel on Exim list:
  within one second, you would still need an Exim receiving process to get
  that same re-used id for there to be duplication.
 
+---
+
 As far as I can tell, sendmail copies standard input to the queue "df"
 file before it even tries to make a smtp connection. This "df" file doesn't
 have headers though.
@@ -112,6 +107,13 @@ collect: Cannot write tfOAA16717
 
 /usr/home/jcr/testspool: write failed, file system is full
 putbody: write error: No space left on device
+
+If you try to use regular sendmail and mqueue is read-only:
+rainier:/var/spool$ echo "hello" | /usr/libexec/sendmail/sendmail reed@pilchuck
+collect: Cannot write ./dff788Rwr21909 (bfcommit, uid=0): Read-only file system
+queueup: cannot create queue temp file ./tff788Rwr21909, uid=0: Read-only file system
+
+-=-=-=
 
 *
 if "-t" and no usernames on command-line and none in headers
@@ -138,143 +140,16 @@ Subject : test
 Exim and sendmail will turn into:
 Subject: test
 
--=-=-=
+------
 
-socket(PF_INET, SOCK_STREAM, IPPROTO_IP) = 4
-getuid()                                = 1000
-setuid(1000)                            = 0
-setsockopt(4, SOL_IP, IP_TOS, [16], 4)  = 0
-connect(4, {sin_family=AF_INET, sin_port=htons(25), sin_addr=inet_addr("216.228.
-64.8")}}, 16) = 0
-open("/home/reed/.telnetrc", O_RDONLY)  = -1 ENOENT (No such file or directory)
-write(1, "Connected to mail.postalzone.com"..., 34) = 34
-write(1, "Escape character is \'^]\'.\n", 26) = 26
-rt_sigprocmask(SIG_BLOCK, NULL, [], 8)  = 0
-rt_sigaction(SIGINT, {0x804ec08, [], SA_RESTART|0x4000000}, {SIG_DFL}, 8) = 0
-rt_sigaction(SIGQUIT, {0x804ec38, [], SA_RESTART|0x4000000}, {SIG_DFL}, 8) = 0
-rt_sigaction(SIGPIPE, {0x804ebec, [], SA_RESTART|0x4000000}, {SIG_DFL}, 8) = 0
-rt_sigaction(SIGWINCH, {0x804ec60, [], SA_RESTART|0x4000000}, {SIG_DFL}, 8) = 0
-rt_sigaction(SIGTSTP, {0x8052510, [], SA_RESTART|0x4000000}, {0x8052510, [], SA_
-RESTART|0x4000000}, 8) = 0
-ioctl(0, SNDCTL_TMR_STOP, {B38400 opost isig icanon echo ...}) = 0
-ioctl(0, FIONBIO, [1])                  = 0
-ioctl(1, FIONBIO, [1])                  = 0
-ioctl(4, FIONBIO, [1])                  = 0
-setsockopt(4, SOL_SOCKET, SO_OOBINLINE, [1], 4) = 0
-select(5, [0 4], [], [4], {0, 0})       = 0 (Timeout)
-select(5, [0 4], [], [4], NULL)         = 1 (in [4])
-recv(4, "220 mail.postalzone.com ESMTP Se"..., 8191, 0) = 90
-select(5, [0 4], [1], [4], {0, 0})      = 1 (out [1], left {0, 0})
-write(1, "220 mail.postalzone.com ESMTP Se"..., 89) = 89
-select(5, [0 4], [], [4], {0, 0})       = 0 (Timeout)
-select(5, [0 4], [], [4], NULL)         = 1 (in [0])
-read(0, "helo pilchuck.reedmedia.net\n", 8191) = 28
-select(5, [0 4], [4], [4], {0, 0})      = 1 (out [4], left {0, 0})
-send(4, "helo pilchuck.reedmedia.net\r\n", 29, 0) = 29
-select(5, [0 4], [], [4], {0, 0})       = 0 (Timeout)
-select(5, [0 4], [], [4], NULL)         = 1 (in [4])
-recv(4, "250 mail.postalzone.com Hello ho"..., 8102, 0) = 89
-select(5, [0 4], [1], [4], {0, 0})      = 1 (out [1], left {0, 0})
-write(1, "250 mail.postalzone.com Hello ho"..., 88) = 88
-select(5, [0 4], [], [4], {0, 0})       = 0 (Timeout)
-select(5, [0 4], [], [4], NULL)         = 1 (in [0])
-read(0, "mail from: <reed@reedmedia.net>\n", 8164) = 32
-select(5, [0 4], [4], [4], {0, 0})      = 1 (out [4], left {0, 0})
-send(4, "mail from: <reed@reedmedia.net>\r"..., 33, 0) = 33
-select(5, [0 4], [], [4], {0, 0})       = 0 (Timeout)
-select(5, [0 4], [], [4], NULL)         = 1 (in [4])
-recv(4, "250 <reed@reedmedia.net>... Send"..., 8013, 0) = 39
-select(5, [0 4], [1], [4], {0, 0})      = 1 (out [1], left {0, 0})
-write(1, "250 <reed@reedmedia.net>... Send"..., 38) = 38
-select(5, [0 4], [], [4], {0, 0})       = 0 (Timeout)
-select(5, [0 4], [], [4], NULL)         = 1 (in [0])
-read(0, "rcpt to: <jcr@iwbc.net>\n", 8132) = 24
-select(5, [0 4], [4], [4], {0, 0})      = 1 (out [4], left {0, 0})
-send(4, "rcpt to: <jcr@iwbc.net>\r\n", 25, 0) = 25
-select(5, [0 4], [], [4], {0, 0})       = 0 (Timeout)
-select(5, [0 4], [], [4], NULL)         = 1 (in [4])
-recv(4, "250 <jcr@iwbc.net>... Recipient "..., 7974, 0) = 36
-select(5, [0 4], [1], [4], {0, 0})      = 1 (out [1], left {0, 0})
-write(1, "250 <jcr@iwbc.net>... Recipient "..., 35) = 35
-select(5, [0 4], [], [4], {0, 0})       = 0 (Timeout)
-select(5, [0 4], [], [4], NULL)         = 1 (in [0])
-read(0, "data\n", 8108)                 = 5
-select(5, [0 4], [4], [4], {0, 0})      = 1 (out [4], left {0, 0})
-send(4, "data\r\n", 6, 0)               = 6
-select(5, [0 4], [], [4], {0, 0})       = 0 (Timeout)
-select(5, [0 4], [], [4], NULL)         = 1 (in [4])
-recv(4, "354 Enter mail, end with \".\" on "..., 7938, 0) = 50
-select(5, [0 4], [1], [4], {0, 0})      = 1 (out [1], left {0, 0})
-write(1, "354 Enter mail, end with \".\" on "..., 49) = 49
-select(5, [0 4], [], [4], {0, 0})       = 0 (Timeout)
-select(5, [0 4], [], [4], NULL)         = 1 (in [0])
-read(0, "Subject: here\n", 8103)        = 14
-select(5, [0 4], [4], [4], {0, 0})      = 1 (out [4], left {0, 0})
-send(4, "Subject: here\r\n", 15, 0)     = 15
-select(5, [0 4], [], [4], {0, 0})       = 0 (Timeout)
-select(5, [0 4], [], [4], NULL)         = 1 (in [0])
-read(0, "\n", 8089)                     = 1
-select(5, [0 4], [4], [4], {0, 0})      = 1 (out [4], left {0, 0})
-send(4, "\r\n", 2, 0)                   = 2
-select(5, [0 4], [], [4], {0, 0})       = 0 (Timeout)
-select(5, [0 4], [], [4], NULL)         = 1 (in [0])
-read(0, "body\n", 8088)                 = 5
-select(5, [0 4], [4], [4], {0, 0})      = 1 (out [4], left {0, 0})
-send(4, "body\r\n", 6, 0)               = 6
-select(5, [0 4], [], [4], {0, 0})       = 0 (Timeout)
-select(5, [0 4], [], [4], NULL)         = 1 (in [0])
-read(0, ".\n", 8083)                    = 2
-select(5, [0 4], [4], [4], {0, 0})      = 1 (out [4], left {0, 0})
-send(4, ".\r\n", 3, 0)                  = 3
-select(5, [0 4], [], [4], {0, 0})       = 0 (Timeout)
-select(5, [0 4], [], [4], NULL)         = 1 (in [4])
-recv(4, "250 KAA18932 Message accepted fo"..., 7888, 0) = 44
-select(5, [0 4], [1], [4], {0, 0})      = 1 (out [1], left {0, 0})
-write(1, "250 KAA18932 Message accepted fo"..., 43) = 43
-select(5, [0 4], [], [4], {0, 0})       = 0 (Timeout)
-select(5, [0 4], [], [4], NULL)         = 1 (in [0])
-read(0, "quit\n", 8081)                 = 5
-select(5, [0 4], [4], [4], {0, 0})      = 1 (out [4], left {0, 0})
-send(4, "quit\r\n", 6, 0)               = 6
-select(5, [0 4], [], [4], {0, 0})       = 0 (Timeout)
-select(5, [0 4], [], [4], NULL)         = 1 (in [4])
-recv(4, "221 mail.postalzone.com closing "..., 7844, 0) = 44
-select(5, [0 4], [1], [4], {0, 0})      = 2 (in [4], out [1], left {0, 0})
-write(1, "221 mail.postalzone.com closing "..., 43) = 43
-recv(4, "", 7800, 0)                    = 0
-rt_sigaction(SIGTSTP, {SIG_DFL}, {0x8052510, [], SA_RESTART|0x4000000}, 8) = 0
-ioctl(0, SNDCTL_TMR_STOP, {B38400 opost isig icanon echo ...}) = 0
-ioctl(0, FIONBIO, [0])                  = 0
-ioctl(1, FIONBIO, [0])                  = 0
-close(4)                                = 0
-rt_sigaction(SIGTSTP, {0x8052510, [], SA_RESTART|0x4000000}, {SIG_DFL}, 8) = 0
-ioctl(0, SNDCTL_TMR_STOP, {B38400 opost isig icanon echo ...}) = 0
-ioctl(0, FIONBIO, [1])                  = 0
-ioctl(1, FIONBIO, [1])                  = 0
-select(2, NULL, [1], NULL, NULL)        = 1 (out [1])
-rt_sigaction(SIGTSTP, {SIG_DFL}, {0x8052510, [], SA_RESTART|0x4000000}, 8) = 0
-ioctl(0, SNDCTL_TMR_STOP, {B38400 opost isig icanon echo ...}) = 0
-ioctl(0, FIONBIO, [0])                  = 0
-close(4)                                = 0
-rt_sigaction(SIGTSTP, {0x8052510, [], SA_RESTART|0x4000000}, {SIG_DFL}, 8) = 0
-ioctl(0, SNDCTL_TMR_STOP, {B38400 opost isig icanon echo ...}) = 0
-ioctl(0, FIONBIO, [1])                  = 0
-ioctl(1, FIONBIO, [1])                  = 0
-select(2, NULL, [1], NULL, NULL)        = 1 (out [1])
-rt_sigaction(SIGTSTP, {SIG_DFL}, {0x8052510, [], SA_RESTART|0x4000000}, 8) = 0
-ioctl(0, SNDCTL_TMR_STOP, {B38400 opost isig icanon echo ...}) = 0
-ioctl(0, FIONBIO, [0])                  = 0
-ioctl(1, FIONBIO, [0])                  = 0
-rt_sigaction(SIGTSTP, {0x8052510, [], SA_RESTART|0x4000000}, {SIG_DFL}, 8) = 0
-ioctl(0, SNDCTL_TMR_STOP, {B38400 opost isig icanon echo ...}) = 0
-ioctl(0, FIONBIO, [1])                  = 0
-ioctl(1, FIONBIO, [1])                  = 0
-select(2, NULL, [1], NULL, NULL)        = 1 (out [1])
-rt_sigaction(SIGTSTP, {SIG_DFL}, {0x8052510, [], SA_RESTART|0x4000000}, 8) = 0
-ioctl(0, SNDCTL_TMR_STOP, {B38400 opost isig icanon echo ...}) = 0
-ioctl(0, FIONBIO, [0])                  = 0
-ioctl(1, FIONBIO, [0])                  = 0
-write(2, "Connection closed by foreign hos"..., 35) = 35
-close(4)                                = -1 EBADF (Bad file descriptor)
-munmap(0x40014000, 4096)                = 0
-_exit(1) 
+Philip Hazel:
+
+ Exim works only with fully qualified RFC822 addresses, i.e. user@domain. 
+ It does allow some incoming addresses not to have a domain, but it 
+ always adds a domain as soon as it sees such addresses. The domain it 
+ adds is set by qualify_recipient (which defaults to qualify_domain if 
+ not explicitly set).
+
+ There is no way round this. Internally, there is no provision for 
+ handling local parts without a domain.
+

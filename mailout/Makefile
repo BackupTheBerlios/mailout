@@ -1,6 +1,6 @@
 CC = gcc
 CFLAGS = -g -O2 -Wall -pedantic
-OBJECTS = mailout.o smtp.o message.o queue.o
+OBJECTS = recipient.o smtp.o message.o queue.o mailout.o
 
 main : $(OBJECTS)
 	$(CC) $(CFLAGS) $(OBJECTS) -o mailout

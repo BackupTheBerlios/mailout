@@ -4,13 +4,16 @@
 #include "config.h"
 #include "mailout.h"
 
-main(argc, argv)
+/* need to make prototypes */
+/* int parse_arguments(int argc, char * argv); */
+
+int main(argc, argv)
   int argc;
   char *argv[];
 {
   int sock;
   char *mailserver;
-  char *hname;
+/*  char *hname; */
   char *temp_from;
   int loop;
 
@@ -43,11 +46,16 @@ main(argc, argv)
 
 /* maybe first look at HOSTNAME via getenv() */
 
+#ifdef HOSTNAME
+/* todo: check return value here */
+  strncpy(myhostname, HOSTNAME, strlen(HOSTNAME) + 1);
+#else
   if (gethostname(myhostname, sizeof(myhostname) - 1) < 0) {
     perror("gethostname");
     return(1);
   }
   myhostname[sizeof(myhostname) - 1] = '\0';
+#endif
 
   if (!from) {
     if (NULL == (from = strdup((char *)getname()))) perror("malloc");
@@ -84,11 +92,14 @@ main(argc, argv)
 
   for (loop = 0; loop < recipient_count ; loop++) {
 #ifdef DEBUG
-    printf ("(%d) sending to %s\n", loop, recipients[loop]);
+    printf ("sending to (%d) \"%s\"\n", loop, recipients[loop]);
 #endif
 
+/* this assumes that the mail server can handle all the recipients */
+/* todo: fix this! this is a bad assumption! */
     if (rcpt_to(sock, recipients[loop])) {
 /* some problem? should I break? Should I continue? */      
+/* todo: if a problem, then note in queue data file */
     }
 
     free(recipients[loop]);
@@ -102,6 +113,17 @@ main(argc, argv)
 
   close(sock);
 
+  /* TODO: if there is a problem log appropriately */
+
+  /* todo: should check if all recipients were successful before: */
+  /* remove queue files */
+  if (unlink(queue_data_filename)) {
+    /* if it doesn't remove, then what should it report? */
+  }
+  if (unlink(queue_message_filename)) {
+    /* if it doesn't remove, then what should it report? */
+  }
+
   syslog(LOG_INFO, "%s sent to %s", from, to);
   closelog();
 
@@ -113,6 +135,7 @@ int parse_arguments(argc, argv)
   char *argv[];
 {
   int in_options = 1;
+  char *tmp_recipient = NULL;
 
   from = NULL;
   to = NULL;
@@ -120,39 +143,57 @@ int parse_arguments(argc, argv)
   do_queue = 0;
 
   while (*++argv) {
-    if (in_options) { 
-      if (!strcmp(*argv, "-f")) {
-        if (*++argv) {
-          from = (char *) malloc(strlen(*argv));
-          strncpy(from, *argv, strlen(*argv));
 #ifdef DEBUG
-          printf ("from: %s\n", from);
+    printf ("ARG / in_options: %s / %d\n", *argv, in_options);
 #endif
+    if (in_options) {
+      if (*argv[0] == '-') { 
+        if (!strcmp(*argv, "-f")) {
+          if (*++argv) {
+            from = (char *) malloc(strlen(*argv));
+            strncpy(from, *argv, strlen(*argv));
+#ifdef DEBUG
+            printf ("from: %s\n", from);
+#endif
+          }
+          else return(1);
+          continue;
         }
-        else return(1);
-        continue;
-      }
-      if (!strcmp(*argv, "-q")) {
-        do_queue = 1;
-        continue;
-      }
-      if (!strcmp(*argv, "-t")) {
-        header_recipients = 1;
-        continue;
-      }
-      if (!strcmp(*argv, "-i")) {
-        /* need to do? or does it matter */
-        /* -i     Ignore  dots alone on lines */
-        continue;
-      }
-      if (!strcmp(*argv, "--")) {
-        in_options = 0;
-        continue;
-      }
+        if (!strcmp(*argv, "-q")) {
+          do_queue = 1;
+          continue;
+        }
+        if (!strcmp(*argv, "-t")) {
+          header_recipients = 1;
+          continue;
+        }
+        if ((!strcmp(*argv, "-i")) || (!strcmp(*argv, "-oi"))) {
+          /* need to do? or does it matter */
+          /* -i     Ignore  dots alone on lines */
+          /* a dot on a line by itself should not
+             terminate an incoming, non-SMTP message. */
+          continue;
+        }
+        if (!strcmp(*argv, "--")) {
+          in_options = 0;
+          continue;
+        }
+        /* invalid option? */ 
+	/* instead of return(1) just ignore */
+	continue;
+      } 
     }
-    else if (header_recipients) break; /* don't use command-line recipients */
 
-    if (add_recipient(*argv)) return(1);
+    if (header_recipients) break; /* don't use command-line recipients */
+
+    tmp_recipient = malloc(strlen(*argv) + 1);
+    if (tmp_recipient) {
+      strncpy(tmp_recipient, *argv, strlen(*argv));
+      if (add_recipient(tmp_recipient)) return(1);
+      memset(tmp_recipient, '\0', strlen(tmp_recipient));
+      free (tmp_recipient);
+    }
+    else perror("malloc");
 
     in_options = 0;
   }
@@ -172,7 +213,8 @@ char * getmailserver (hname)
     perror("getmailserver");
     exit(1);
   }
-  strncpy(ret, MAILHUB, strlen(MAILHUB));
+/* todo: need to check sizes first */
+  strncpy(ret, MAILHUB, strlen(MAILHUB) + 1);
 
   return ret;
 
@@ -183,7 +225,7 @@ char * getname()
 {
   struct passwd *pw;
 
-/* should use getenv() for MAILUSER, USER, LOGNAME or then ... */
+/* todo: should use getenv() for MAILUSER, USER, LOGNAME or then ... */
 
   if ((pw = getpwuid(getuid())) != NULL)
     return pw->pw_name;
@@ -191,47 +233,3 @@ char * getname()
 
 }
 
-
-int add_recipient (address)
-  char * address;
-{
-/*  int wcount; */
-#ifdef DEBUG
-  fprintf(stderr, "recipient: %s\n", address);
-#endif
-
-  if (NULL == (recipients =
-    realloc(recipients, (2 * recipient_count) + 2))) {
-    warn("malloc");
-    return(1);
-  }
-
-  /* chop off whitespace from beginning of address -- does it really matter? */
-  /* should I check if I am killing spaces forever? */
-  while (address[0] == ' ' || address[0] == '\t') address++;
-
-  if (NULL == (recipients[recipient_count] =
-    malloc(sizeof(address)))) {
-    warn("malloc");
-    return(1);
-  }
-
-  strncpy(recipients[recipient_count], address,
-          strlen(address));
-
-  recipient_count++;
-
-/*  wcount = write (queue_data_fd, (const void *)address,
-                  strlen(address)); 
-  if (wcount == -1 || wcount != strlen(address)) {
-    warn("problem with writing to queue data file %s",
-    queue_data_filename);
-    return(1);
-  }
-  write (queue_data_fd, "\n", 1);
-*/
-
-  memset(address, '\0', 300);
-
-  return(0);
-}

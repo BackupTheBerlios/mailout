@@ -1,0 +1,3 @@
+20001107	Add queue option -- doesn't do anything though.
+
+		Add "--" option and now knows when in options or recipients.

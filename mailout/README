@@ -1,0 +1,41 @@
+This is mailout.
+
+http://www.reedmedia.net/software/mailout/
+
+A simple SMTP mail client for sending emails.
+
+It is a simple "sendmail" replacement.
+
+To build and install:
+
+1) edit config.h to:
+   - choose your MAILHUB where all mail will go (or route through);
+   - optionally, set HOSTNAME, if system's gethostname(3) isn't desired.
+
+2) run "make"
+
+3) add a "mailout" user and group
+
+4) create a queue directory, like:
+
+  mkdir -p /var/spool/mailout
+  chown mailout:mailout /var/spool/mailout
+
+5) install like:
+
+  mkdir -p /usr/local/sbin
+  cp mailout /usr/local/sbin/mailout
+  chown mailout:mailout /usr/local/sbin/mailout
+  chmod 6755 /usr/local/sbin/mailout ## setuid and setgid mailout
+  mkdir -p /usr/local/man/man8
+  cp mailout.8 /usr/local/man/man8/mailout.8
+
+6) then replace sendmail, like:
+
+  cp /usr/lib/sendmail /usr/lib/sendmail.save
+  ln -s /usr/local/sbin/mailout /usr/lib/sendmail
+
+ (And maybe move other sendmail related symlinks and tools.
+  And maybe create symlink for sendmail man page too.)
+
+

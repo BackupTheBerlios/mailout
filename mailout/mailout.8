@@ -1,0 +1,74 @@
+.Dd July 10, 2002
+.Dt MAILOUT 8
+.Os
+.Sh NAME
+.Nm mailout
+.Nd outgoing Mail Transfer Agent
+.Sh SYNOPSIS
+.Nm
+.Op Fl t
+.Op Fl f Ar sender
+.Op Ar recipient ...
+.Sh DESCRIPTION
+The
+.Nm
+utility sends email out using SMTP. It is a simple
+.Xr sendmail 1
+replacement for sending outgoing email. It does not
+listen to any interface; and it cannot route email.
+.Pp
+The following options are available:
+.Bl -tag -width flag
+.It Fl f Ar sender
+Set the address of the
+.Ar sender
+instead of the current user.
+.It Fl i
+Not implemented. Ignored.
+(A dot "\fB.\fR" character on line by itself should not terminate message.)
+.It Fl oi
+Not implemented. Ignored.
+(A dot "\fB.\fR" character on line by itself should not terminate message.)
+.It Fl q
+Not implemented. Ignored. (Show queue of mail to be sent.)
+.It Fl t
+Use recipients from the To:, Cc:, and Bcc: headers.
+.It Fl -
+Signal end of options. (Two hyphens.)
+.El
+.Pp
+Multiple
+.Ar recipient
+email addresses can be listed on the command line.
+.Pp
+Currently, the relaying or destination mailhub must be defined
+at compile-time.
+.Nm
+only sends the email to one mail server.
+.Pp
+.Nm
+does minor logging using the
+.Xr syslog 3
+LOG_MAIL facility and
+LOG_INFO priority. (By default, the logging is recorded
+at /var/log/maillog.)
+.\" .Sh RETURN VALUES
+.\" .Sh EXAMPLES
+.\" .Sh SEE ALSO
+.Sh STANDARDS
+.Nm
+does generic SMTP (HELO, MAIL FROM, RCPT TO, and QUIT).
+.\" .Sh HISTORY
+.\" .Sh AUTHORS
+.Sh BUGS
+.Nm
+does not use /etc/aliases. It cannot deliver locally.
+.Nm
+does not check syntax of addresses. It does not currently have a
+mechanism to retry sending queued mail.
+.Pp
+.Nm
+requires a space between
+"\fB-f\fR" and the
+.Ar sender
+address.

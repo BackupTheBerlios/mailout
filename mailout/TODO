@@ -1,5 +1,33 @@
+it seems like mail of a big file is faster with mail (11/Oct/2001)
+dd if=/dev/zero of=/dev/stdout bs=1k count=2048 | tr '\0' 'A' | sendmail test@foo.bar
+
+write routine to properly fold long headlines (11/Oct/2001)
+ maybe it can return current_line (which will be saved) and
+ next_line (which will be added on to)
+
+document: doesn really parse for rfc2822 valid addresses (11/Oct/2001)
+
+don't replace myhostname with HOSTNAME (11/Oct/2001)
+ but have a separate variable for appending to email address
+
+add compile time feature to turn off syslogging! (11/Oct/2001)
+
+add username to get rid of "from username@host" in Received header (11/Oct/2001)
+
+warnings (10/Oct/2001):
+message.c: In function `make_queue_filenames':
+message.c:275: warning: long int format, time_t arg (arg 4)
+
+if no headers and it adds headers, then must send newline (10/Oct/2001)
+ Bug noticed with qmail but not with exim.
+ Strange that qmail allows invalid header. Still I need to the right thing.
+- this read_and_save_message() is all out of order or done wrong
+  it shouldn't print data until the it is ready,
+  so a CRLF can be added or special headers added
+
 clean up message.c mess (10/Oct/2001)
  for example, it has redundant routines
+ maybe have a "write" function that did the checks?
 
 two places that adds missing headers? (10/Oct/2001)
  message.c and smtp.c?
@@ -82,9 +110,6 @@ what caused /var/cron/m2696-973584000? (23/Jun/2001)
 
 fix so it works as mailq (14/Apr/2001)
  mailout: neither action flags nor mail addresses given.
-
-mailout setgid mailout group (or user) so it can write to the queues
- (18/Jun/2001)
 
 If disk is full: (13/Jun/2001)
 Mail not sent. Sending error: 451 qq write error or disk full (#4.3.0)]

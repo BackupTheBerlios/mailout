@@ -1,0 +1,207 @@
+mailout
+(c) Jeremy C. Reed
+
+01/Nov/2000
+My plans and ideas:
+
+- Send mail with a few "sendmail" options
+
+ command-line options:
+  -f from
+  -- (no more options)
+
+ -FCronDaemon -odi -oem -oi -or0s -t
+                        /* -Fx   = set full-name of sender
+                         * -odi  = Option Deliverymode Interactive
+                         * -oem  = Option Errors Mailedtosender
+                         * -or0s = Option Readtimeout -- don't time out
+                         * -t    = read recipient from header of message
+
+example:
+"sendmail", "-i", "-t", "-F",
+                    "\"Reminder Service\"", "-f", "root", NULL);
+
+if option like "-f" is after a valid user name then Exim and Sendmail think
+it is also a username to send to.
+
+If no argument after option or bad argument:
+sendmail -f
+sendmail: option requires an argument -- f
+
+/usr/sbin/exim -f
+exim abandoned: unknown, malformed, or incomplete option -f
+
+  - can deliver locally
+    - use outside delivery program
+  - can send out over network
+  - can relay all mail through smarthost or mailhub
+  - look for dns MX record for host; if not found, use A record
+  - if can't send, then queue mail
+    - no daemon to run queue, must run manually (i.e. via cron)
+- Do not run as a daemon
+- Do not listen to any ports (like 25 for example)
+
+More thoughts:
+
+- don't need setuid unless able to do local deliveries?
+
+Do various checks.
+
+ ./mailout `perl -e 'printf "A" x 9777'`
+ Exim says and logs:
+  13rQzZ-0004mk-00 string_sprintf expansion was longer than 8192
+ Sendmail acts weird, but says:
+  Address too long
+  prescan: token too long
+ Qmail says after received input file:
+  qmail-inject: fatal: envelope address too long for qq (#5.1.3)
+
+ No command-line arguments:
+
+ exim says "exim: neither action flags nor mail addresses given"
+ qmail just reads input but doesn't do anything.
+ sendmail says "jcr... Recipient names must be specified" then reads input
+  and then doesn't do anything.
+
+Don't assume remote SMTP server will behave.
+
+-=-=-=
+
+socket(PF_INET, SOCK_STREAM, IPPROTO_IP) = 4
+getuid()                                = 1000
+setuid(1000)                            = 0
+setsockopt(4, SOL_IP, IP_TOS, [16], 4)  = 0
+connect(4, {sin_family=AF_INET, sin_port=htons(25), sin_addr=inet_addr("216.228.
+64.8")}}, 16) = 0
+open("/home/reed/.telnetrc", O_RDONLY)  = -1 ENOENT (No such file or directory)
+write(1, "Connected to mail.postalzone.com"..., 34) = 34
+write(1, "Escape character is \'^]\'.\n", 26) = 26
+rt_sigprocmask(SIG_BLOCK, NULL, [], 8)  = 0
+rt_sigaction(SIGINT, {0x804ec08, [], SA_RESTART|0x4000000}, {SIG_DFL}, 8) = 0
+rt_sigaction(SIGQUIT, {0x804ec38, [], SA_RESTART|0x4000000}, {SIG_DFL}, 8) = 0
+rt_sigaction(SIGPIPE, {0x804ebec, [], SA_RESTART|0x4000000}, {SIG_DFL}, 8) = 0
+rt_sigaction(SIGWINCH, {0x804ec60, [], SA_RESTART|0x4000000}, {SIG_DFL}, 8) = 0
+rt_sigaction(SIGTSTP, {0x8052510, [], SA_RESTART|0x4000000}, {0x8052510, [], SA_
+RESTART|0x4000000}, 8) = 0
+ioctl(0, SNDCTL_TMR_STOP, {B38400 opost isig icanon echo ...}) = 0
+ioctl(0, FIONBIO, [1])                  = 0
+ioctl(1, FIONBIO, [1])                  = 0
+ioctl(4, FIONBIO, [1])                  = 0
+setsockopt(4, SOL_SOCKET, SO_OOBINLINE, [1], 4) = 0
+select(5, [0 4], [], [4], {0, 0})       = 0 (Timeout)
+select(5, [0 4], [], [4], NULL)         = 1 (in [4])
+recv(4, "220 mail.postalzone.com ESMTP Se"..., 8191, 0) = 90
+select(5, [0 4], [1], [4], {0, 0})      = 1 (out [1], left {0, 0})
+write(1, "220 mail.postalzone.com ESMTP Se"..., 89) = 89
+select(5, [0 4], [], [4], {0, 0})       = 0 (Timeout)
+select(5, [0 4], [], [4], NULL)         = 1 (in [0])
+read(0, "helo pilchuck.reedmedia.net\n", 8191) = 28
+select(5, [0 4], [4], [4], {0, 0})      = 1 (out [4], left {0, 0})
+send(4, "helo pilchuck.reedmedia.net\r\n", 29, 0) = 29
+select(5, [0 4], [], [4], {0, 0})       = 0 (Timeout)
+select(5, [0 4], [], [4], NULL)         = 1 (in [4])
+recv(4, "250 mail.postalzone.com Hello ho"..., 8102, 0) = 89
+select(5, [0 4], [1], [4], {0, 0})      = 1 (out [1], left {0, 0})
+write(1, "250 mail.postalzone.com Hello ho"..., 88) = 88
+select(5, [0 4], [], [4], {0, 0})       = 0 (Timeout)
+select(5, [0 4], [], [4], NULL)         = 1 (in [0])
+read(0, "mail from: <reed@reedmedia.net>\n", 8164) = 32
+select(5, [0 4], [4], [4], {0, 0})      = 1 (out [4], left {0, 0})
+send(4, "mail from: <reed@reedmedia.net>\r"..., 33, 0) = 33
+select(5, [0 4], [], [4], {0, 0})       = 0 (Timeout)
+select(5, [0 4], [], [4], NULL)         = 1 (in [4])
+recv(4, "250 <reed@reedmedia.net>... Send"..., 8013, 0) = 39
+select(5, [0 4], [1], [4], {0, 0})      = 1 (out [1], left {0, 0})
+write(1, "250 <reed@reedmedia.net>... Send"..., 38) = 38
+select(5, [0 4], [], [4], {0, 0})       = 0 (Timeout)
+select(5, [0 4], [], [4], NULL)         = 1 (in [0])
+read(0, "rcpt to: <jcr@iwbc.net>\n", 8132) = 24
+select(5, [0 4], [4], [4], {0, 0})      = 1 (out [4], left {0, 0})
+send(4, "rcpt to: <jcr@iwbc.net>\r\n", 25, 0) = 25
+select(5, [0 4], [], [4], {0, 0})       = 0 (Timeout)
+select(5, [0 4], [], [4], NULL)         = 1 (in [4])
+recv(4, "250 <jcr@iwbc.net>... Recipient "..., 7974, 0) = 36
+select(5, [0 4], [1], [4], {0, 0})      = 1 (out [1], left {0, 0})
+write(1, "250 <jcr@iwbc.net>... Recipient "..., 35) = 35
+select(5, [0 4], [], [4], {0, 0})       = 0 (Timeout)
+select(5, [0 4], [], [4], NULL)         = 1 (in [0])
+read(0, "data\n", 8108)                 = 5
+select(5, [0 4], [4], [4], {0, 0})      = 1 (out [4], left {0, 0})
+send(4, "data\r\n", 6, 0)               = 6
+select(5, [0 4], [], [4], {0, 0})       = 0 (Timeout)
+select(5, [0 4], [], [4], NULL)         = 1 (in [4])
+recv(4, "354 Enter mail, end with \".\" on "..., 7938, 0) = 50
+select(5, [0 4], [1], [4], {0, 0})      = 1 (out [1], left {0, 0})
+write(1, "354 Enter mail, end with \".\" on "..., 49) = 49
+select(5, [0 4], [], [4], {0, 0})       = 0 (Timeout)
+select(5, [0 4], [], [4], NULL)         = 1 (in [0])
+read(0, "Subject: here\n", 8103)        = 14
+select(5, [0 4], [4], [4], {0, 0})      = 1 (out [4], left {0, 0})
+send(4, "Subject: here\r\n", 15, 0)     = 15
+select(5, [0 4], [], [4], {0, 0})       = 0 (Timeout)
+select(5, [0 4], [], [4], NULL)         = 1 (in [0])
+read(0, "\n", 8089)                     = 1
+select(5, [0 4], [4], [4], {0, 0})      = 1 (out [4], left {0, 0})
+send(4, "\r\n", 2, 0)                   = 2
+select(5, [0 4], [], [4], {0, 0})       = 0 (Timeout)
+select(5, [0 4], [], [4], NULL)         = 1 (in [0])
+read(0, "body\n", 8088)                 = 5
+select(5, [0 4], [4], [4], {0, 0})      = 1 (out [4], left {0, 0})
+send(4, "body\r\n", 6, 0)               = 6
+select(5, [0 4], [], [4], {0, 0})       = 0 (Timeout)
+select(5, [0 4], [], [4], NULL)         = 1 (in [0])
+read(0, ".\n", 8083)                    = 2
+select(5, [0 4], [4], [4], {0, 0})      = 1 (out [4], left {0, 0})
+send(4, ".\r\n", 3, 0)                  = 3
+select(5, [0 4], [], [4], {0, 0})       = 0 (Timeout)
+select(5, [0 4], [], [4], NULL)         = 1 (in [4])
+recv(4, "250 KAA18932 Message accepted fo"..., 7888, 0) = 44
+select(5, [0 4], [1], [4], {0, 0})      = 1 (out [1], left {0, 0})
+write(1, "250 KAA18932 Message accepted fo"..., 43) = 43
+select(5, [0 4], [], [4], {0, 0})       = 0 (Timeout)
+select(5, [0 4], [], [4], NULL)         = 1 (in [0])
+read(0, "quit\n", 8081)                 = 5
+select(5, [0 4], [4], [4], {0, 0})      = 1 (out [4], left {0, 0})
+send(4, "quit\r\n", 6, 0)               = 6
+select(5, [0 4], [], [4], {0, 0})       = 0 (Timeout)
+select(5, [0 4], [], [4], NULL)         = 1 (in [4])
+recv(4, "221 mail.postalzone.com closing "..., 7844, 0) = 44
+select(5, [0 4], [1], [4], {0, 0})      = 2 (in [4], out [1], left {0, 0})
+write(1, "221 mail.postalzone.com closing "..., 43) = 43
+recv(4, "", 7800, 0)                    = 0
+rt_sigaction(SIGTSTP, {SIG_DFL}, {0x8052510, [], SA_RESTART|0x4000000}, 8) = 0
+ioctl(0, SNDCTL_TMR_STOP, {B38400 opost isig icanon echo ...}) = 0
+ioctl(0, FIONBIO, [0])                  = 0
+ioctl(1, FIONBIO, [0])                  = 0
+close(4)                                = 0
+rt_sigaction(SIGTSTP, {0x8052510, [], SA_RESTART|0x4000000}, {SIG_DFL}, 8) = 0
+ioctl(0, SNDCTL_TMR_STOP, {B38400 opost isig icanon echo ...}) = 0
+ioctl(0, FIONBIO, [1])                  = 0
+ioctl(1, FIONBIO, [1])                  = 0
+select(2, NULL, [1], NULL, NULL)        = 1 (out [1])
+rt_sigaction(SIGTSTP, {SIG_DFL}, {0x8052510, [], SA_RESTART|0x4000000}, 8) = 0
+ioctl(0, SNDCTL_TMR_STOP, {B38400 opost isig icanon echo ...}) = 0
+ioctl(0, FIONBIO, [0])                  = 0
+close(4)                                = 0
+rt_sigaction(SIGTSTP, {0x8052510, [], SA_RESTART|0x4000000}, {SIG_DFL}, 8) = 0
+ioctl(0, SNDCTL_TMR_STOP, {B38400 opost isig icanon echo ...}) = 0
+ioctl(0, FIONBIO, [1])                  = 0
+ioctl(1, FIONBIO, [1])                  = 0
+select(2, NULL, [1], NULL, NULL)        = 1 (out [1])
+rt_sigaction(SIGTSTP, {SIG_DFL}, {0x8052510, [], SA_RESTART|0x4000000}, 8) = 0
+ioctl(0, SNDCTL_TMR_STOP, {B38400 opost isig icanon echo ...}) = 0
+ioctl(0, FIONBIO, [0])                  = 0
+ioctl(1, FIONBIO, [0])                  = 0
+rt_sigaction(SIGTSTP, {0x8052510, [], SA_RESTART|0x4000000}, {SIG_DFL}, 8) = 0
+ioctl(0, SNDCTL_TMR_STOP, {B38400 opost isig icanon echo ...}) = 0
+ioctl(0, FIONBIO, [1])                  = 0
+ioctl(1, FIONBIO, [1])                  = 0
+select(2, NULL, [1], NULL, NULL)        = 1 (out [1])
+rt_sigaction(SIGTSTP, {SIG_DFL}, {0x8052510, [], SA_RESTART|0x4000000}, 8) = 0
+ioctl(0, SNDCTL_TMR_STOP, {B38400 opost isig icanon echo ...}) = 0
+ioctl(0, FIONBIO, [0])                  = 0
+ioctl(1, FIONBIO, [0])                  = 0
+write(2, "Connection closed by foreign hos"..., 35) = 35
+close(4)                                = -1 EBADF (Bad file descriptor)
+munmap(0x40014000, 4096)                = 0
+_exit(1) 

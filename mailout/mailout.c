@@ -47,7 +47,13 @@ main(argc, argv)
 
   free(mailserver); /* don't free until after logged and used */
 
-  communicate(sock);
+  if (start_smtp(sock)) exit(1); 
+
+  if (send_message(sock)) exit(1);
+
+  if (end_smtp(sock)) { 
+    /* I assume the message was already mailed successfully, so do nothing. */ 
+  }
 
   close(sock);
 

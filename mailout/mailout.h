@@ -11,9 +11,16 @@ char unique_id[MAXPATHLEN + 1];
 char queue_message_filename[MAXPATHLEN + 1];
 char queue_data_filename[MAXPATHLEN + 1];
 
-char * getmailserver (char *hname);
-void make_queue_filenames ();
+char myhostname[MAXHOSTNAMELEN + 1];
 
 int do_queue;
 int header_recipients;
+
+char **recipients;
+int recipient_count;
+
+char * getmailserver (char *hname);
+void make_queue_filenames ();
+char * getname();
+
 

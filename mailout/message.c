@@ -67,7 +67,6 @@ int read_and_save_message()
   while (return_value == 0 && (rcount = read(STDIN_FILENO, buf, 1)) > 0) {
 
     if (header) {
-if ('\n' == buf[0]) printf("has newline\n");
       if ('\n' != buf[0] && char_count < 79) {
         header_buf[char_count] = buf[0];
         char_count++;
@@ -118,22 +117,9 @@ if ('\n' == buf[0]) printf("has newline\n");
 /*                    header_buf[tmp_pos] == '>' || */
                     header_buf[tmp_pos] == ',') {
                   if (in_address) {
-#ifdef DEBUG
-                    fprintf(stderr, "1recipient: %s\n", current_address);
-#endif
-                    wcount = write (queue_data_fd,
-                           (const void *)current_address,
-                           strlen(current_address)); 
-                    if (wcount == -1 || wcount != strlen(current_address)) {
-                      warn("problem with writing to queue data file %s",
-                      queue_data_filename);
-                      return_value = 1;
-                      break;    
-                    }
-                    write (queue_data_fd, "\n", 1);
-                    memset(current_address, '\0', 300);
-                    current_address_len = 0; 
+                    if (return_value = add_recipient(current_address)) break;
                     in_address = 0;
+                    current_address_len = 0; 
                   }
                   continue;
                 }
@@ -145,6 +131,8 @@ if ('\n' == buf[0]) printf("has newline\n");
                 current_address[current_address_len] = header_buf[tmp_pos];
                 in_address = 1;
                 current_address_len++; 
+
+
               }
 
             }
@@ -161,22 +149,9 @@ if ('\n' == buf[0]) printf("has newline\n");
 
         if (in_to_cc_bcc && in_address) {
 /* output recipient just in case */
-#ifdef DEBUG
-         fprintf(stderr, "2recipient: %s\n", current_address);
-#endif
-         wcount = write (queue_data_fd,
-                         (const void *)current_address,
-                         strlen(current_address)); 
-         if (wcount == -1 || wcount != strlen(current_address)) {
-           warn("problem with writing to queue data file %s",
-             queue_data_filename);
-           return_value = 1;
-           break;    
-         } 
-         write (queue_data_fd, "\n", 1);
-         memset(current_address, '\0', 300);
-         current_address_len = 0; 
-         in_address = 0;
+          if (return_value = add_recipient(current_address)) break;
+          in_address = 0;
+          current_address_len = 0; 
         }
       }  
 
@@ -222,6 +197,7 @@ if ('\n' == buf[0]) printf("has newline\n");
     return (1);
   }
 
+  /* need to do */
   /* clean up if queue file isn't perfect -- remove it if exists */
 
 #ifdef DEBUG
@@ -256,9 +232,10 @@ OAA26027
   /* need to make sure queue file doesn't already exist */
 
   sprintf(queue_message_filename,
-          "/home/reed/src/mailout/queue/%s.m", unique_id);
+          "%s/%s.m", QUEUEDIRECTORY, unique_id);
 
   sprintf(queue_data_filename,
-          "/home/reed/src/mailout/queue/%s.d", unique_id);
+          "%s/%s.d", QUEUEDIRECTORY, unique_id);
 
 }
+

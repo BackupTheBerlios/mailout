@@ -52,7 +52,8 @@ int start_smtp (s)
   int s;
 {
   char tmpbuf[1024];
-  int loop;
+  int tmp_len;
+  char * tmp_str;
 
   memset(tmpbuf, '\0', 1024);
 
@@ -71,7 +72,23 @@ int start_smtp (s)
     return(1);
   }
 
-  write (s, "HELO test\r\n", 11);
+  tmp_len = 8 + strlen(myhostname);
+  if (NULL == (tmp_str = malloc(tmp_len))) {
+    perror("malloc");
+    return(1);
+  } 
+
+  if (0 == snprintf(tmp_str, tmp_len,
+                    "HELO %s\r\n", myhostname)) {
+    perror("snprintf");
+    return(1);
+  }
+
+#ifdef DEBUG
+  printf ("sent: HELO %s\r\n", myhostname);
+#endif
+  write (s, tmp_str, (tmp_len - 1)); 
+  free(tmp_str);
 
   memset(tmpbuf, '\0', 1024);
 
@@ -82,7 +99,7 @@ int start_smtp (s)
   }
 
 #ifdef DEBUG
-  printf ("%s", tmpbuf);
+  printf ("returned: %s", tmpbuf);
 #endif
 
   if (strncmp("250 ", tmpbuf, 4)) {
@@ -90,23 +107,27 @@ int start_smtp (s)
     return(1);
   }
 
-  return (0);
-}
-
-
-int send_message (s)
-  int s;
-{
-  int fd, rcount, wcount, return_value;
-  char buf[MAXBSIZE];
-  char tmpbuf[1024];
-  
   memset(tmpbuf, '\0', 1024);
+
+  tmp_len = 14 + strlen(from);
+  if (NULL == (tmp_str = malloc(tmp_len))) {
+    perror("malloc");
+    return(1);
+  }
+   
+  if (0 == snprintf(tmp_str, tmp_len,
+                    "MAIL FROM: %s\r\n", from)) {
+    perror("snprintf");
+    return(1);
+  }
   
-  write (s, "MAIL FROM: <", 12);
-  write (s, from, strlen(from));
-  write (s, ">\n", 2);
-    
+#ifdef DEBUG
+  printf("sent: %s", tmp_str);
+#endif
+
+  write (s, tmp_str, (tmp_len - 1));
+  free(tmp_str);
+  
 /* should reply with 250 */
   if (read(s, tmpbuf, 1024) < 1) {
     perror ("mailout: read");
@@ -114,18 +135,42 @@ int send_message (s)
   } 
 
 #ifdef DEBUG
-  printf ("%s", tmpbuf);
+  printf ("returned: %s", tmpbuf);
 #endif
 
   if (strncmp("250 ", tmpbuf, 4)) {
     perror ("mailout: remote smtp didn't like MAIL FROM");
     return(1);  
   }
+  return (0);
+}
+
+int rcpt_to (s, address)
+  int s;
+  char * address;
+{
+  char tmpbuf[1024];
+  char * temp;
+
+  if (strchr(address, '@') == 0) {
+    temp = address;
+    
+    address = malloc(strlen(temp) + strlen(myhostname) + 3);
+/* be sure check all malloc's */ 
+    if (address) {
+      if (sprintf(address, "%s@%s", temp, myhostname) == 0) perror ("sprintf");
+    } 
+    else {
+      perror("malloc");
+    }
+  }
+
+  if (NULL == to) to = strdup(address);
 
   memset(tmpbuf, '\0', 1024);
   
   write (s, "RCPT TO: <", 10);
-  write (s, to, strlen(to));
+  write (s, address, strlen(address));
   write (s, ">\n", 2);
     
 /* should reply with 250 */
@@ -146,6 +191,17 @@ int send_message (s)
   }
 
   memset(tmpbuf, '\0', 1024);
+
+  return(0);
+
+}
+
+int send_message (s)
+  int s;
+{
+  int fd, rcount, wcount, return_value;
+  char buf[MAXBSIZE];
+  char tmpbuf[1024];
   
   write (s, "DATA\n", 5);
     
@@ -176,6 +232,8 @@ int send_message (s)
 #ifdef DEBUG
 fprintf(stderr, "line length: %d\n", rcount);
 #endif
+/* need to fix */
+/* this is way wrong, because it isn't line by line */
     if (memchr(buf, '.', 1)) {
       write (s, ".", 1); /* should test success */
 #ifdef DEBUG
@@ -234,7 +292,6 @@ int end_smtp (s)
   int s;
 {
   char buf[1024];
-  int loop;
 
   memset(buf, '\0', 1024);
 

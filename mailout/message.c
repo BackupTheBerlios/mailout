@@ -21,6 +21,7 @@ int read_and_save_message()
   int queue_message_fd, queue_data_fd, rcount, wcount;
   int return_value, char_count, dot_added;
   int in_to_cc_bcc = 0;
+  int in_bcc = 0;
   int tmp_pos;
   int in_address = 0;
   char current_address[300];
@@ -102,19 +103,25 @@ int read_and_save_message()
             tmp_pos = 0;
             if (strncasecmp(line_buf, "to:", 3) == 0) {
               in_to_cc_bcc = 1;
+              in_bcc = 0;
               tmp_pos = 3;
             }
             else if (strncasecmp(line_buf, "cc:", 3) == 0) {
               in_to_cc_bcc = 1;
+              in_bcc = 0;
               tmp_pos = 3;
             }
             else if (strncasecmp(line_buf, "bcc:", 4) == 0) {
               in_to_cc_bcc = 1;
+              in_bcc = 1;	/* to strip out the bcc header */
               tmp_pos = 4;
             }
             else if (in_to_cc_bcc && (line_buf[0] == '\t' ||
                      line_buf[0] == ' ')) in_to_cc_bcc = 1;
-            else in_to_cc_bcc = 0;
+            else {
+		in_to_cc_bcc = 0;
+		in_bcc = 0;
+            }
 
             if (in_to_cc_bcc) {
              
@@ -134,6 +141,7 @@ int read_and_save_message()
                 if (line_buf[tmp_pos] == '\0' || line_buf[tmp_pos] == ',') {
                   if (in_address) {
                     if ((return_value = add_recipient(current_address))) break;
+/* todo: record all recipients because bcc is stripped */
                     memset(current_address, '\0', 300);
                     in_address = 0;
                     current_address_len = 0; 
@@ -168,6 +176,7 @@ int read_and_save_message()
         } /* looks like a header */
         else {
           header = 0;
+          in_bcc = 0;
 #ifdef DEBUG
 fprintf(stderr, "end of possible headers \"%c\"\n", line_buf[0]);
 #endif
@@ -222,13 +231,15 @@ fprintf(stderr, "header not found!\n");
             break; /* doesn't read anymore and doesn't write this to queue. */
         }
 
-        wcount = write(queue_message_fd, line_buf, char_count);
-        if (wcount == -1 || wcount != char_count) {
-          warn("problem with writing to queue message file %s",
-                queue_message_filename);
-          return_value = 1;
-          break;
-        }
+	if (!in_bcc) {
+	  wcount = write(queue_message_fd, line_buf, char_count);
+       	  if (wcount == -1 || wcount != char_count) {
+            warn("problem with writing to queue message file %s",
+                  queue_message_filename);
+            return_value = 1;
+            break;
+          }
+	}
       }
 
 #ifdef DEBUG

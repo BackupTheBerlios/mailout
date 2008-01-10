@@ -14,19 +14,21 @@ To build and install:
 
 2) run "make"
 
-3) add a "mailout" user and group
+3) add a "mailout" group
 
 4) create a queue directory, like:
 
   mkdir -p /var/spool/mailout
-  chown mailout:mailout /var/spool/mailout
+  chown root:mailout /var/spool/mailout
+  chmod 775 /var/spool/mailout
+
 
 5) install like:
 
   mkdir -p /usr/local/sbin
   cp mailout /usr/local/sbin/mailout
-  chown mailout:mailout /usr/local/sbin/mailout
-  chmod 6755 /usr/local/sbin/mailout ## setuid and setgid mailout
+  chown root:mailout /usr/local/sbin/mailout
+  chmod 2755 /usr/local/sbin/mailout ## setgid mailout
   mkdir -p /usr/local/man/man8
   cp mailout.8 /usr/local/man/man8/mailout.8
 

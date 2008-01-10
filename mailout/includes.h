@@ -7,6 +7,6 @@
 #include <sys/param.h>
 #include <stdlib.h>
 #include <syslog.h>
-#include <varargs.h>
+#include <stdarg.h>
 #include <sys/types.h>
 #include <pwd.h>

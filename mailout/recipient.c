@@ -33,6 +33,8 @@ int add_recipient (address)
     if (address[strlen(address)-1] == '>') address[strlen(address)-1] = '\0';
   }
 
+  if (strlen(address) == 0) return(0); /* nothing to add */
+
   if (NULL == (recipients[recipient_count] =
     malloc(strlen(address)+1))) {
     warn("malloc");
